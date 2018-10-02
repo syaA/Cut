@@ -16,6 +16,14 @@ struct color_base
   color_base(float r, float g, float b, float a)
     : r(r), g(g), b(b), a(a)
   {}
+  color_base(std::initializer_list<float> init)
+    : color_base(0.f, 0.f, 0.f, 0.f)
+  {
+    float *d = v;
+    for (auto f : init) {
+      *d++ = f;
+    }
+  }
   color_base(const color_base& o)
     : r(o.r), g(o.g), b(o.b), a(o.a)
   {}

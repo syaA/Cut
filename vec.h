@@ -17,7 +17,13 @@ struct vec2_base
   vec2_base(value_t x, value_t y)
     : x(x), y(y) {}
   vec2_base(std::initializer_list<value_t> init)
-    : v(init) {}
+    : vec2_base(value_t(), value_t())
+  {
+    value_t *d = v;
+    for (auto f : init) {
+      *d++ = f;
+    }
+  }
   vec2_base(const vec2_base& o)
     : x(o.x), y(o.y) {}
 };
@@ -38,7 +44,13 @@ struct vec3_base
   vec3_base(value_t x, value_t y, value_t z)
     : x(x), y(y), z(z) {}
   vec3_base(std::initializer_list<value_t> init)
-    : v(init) {}
+    : vec3_base(value_t(), value_t())
+  {
+    value_t *d = v;
+    for (auto f : init) {
+      *d++ = f;
+    }
+  }
   vec3_base(const vec3_base& o)
     : x(o.x), y(o.y), z(o.z) {}
 };
@@ -59,7 +71,13 @@ struct vec4_base
   vec4_base(value_t x, value_t y, value_t z, value_t w)
     : x(x), y(y), z(z), w(w) {}
   vec4_base(std::initializer_list<value_t> init)
-    : v(init) {}
+    : vec4_base(value_t(), value_t())
+  {
+    value_t *d = v;
+    for (auto f : init) {
+      *d++ = f;
+    }
+  }
   vec4_base(const vec4_base& o)
     : x(o.x), y(o.y), z(o.z), w(o.w) {}
 };

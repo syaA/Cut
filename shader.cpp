@@ -221,6 +221,9 @@ void shader::set_attrib(const char *name,
                         size_t offset)
 {
   int loc = get_shader_program()->attrib_location(name);
+  if (loc < 0) {
+    return;
+  }
   glEnableVertexAttribArray(loc);
   glVertexAttribPointer(loc, size, type, GL_FALSE, stride, (void*)offset);
 }

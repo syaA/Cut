@@ -8,6 +8,8 @@
 #include "pmx_loader.h"
 #include "resource_repository.h"
 
+#include "font.h"
+
 
 namespace
 {
@@ -138,6 +140,11 @@ int main(int argc, char **argv)
   world()->add("camera_control", std::make_shared<camera_control>(scn->root_camera()));
   auto cc = world()->get<camera_control::ptr_t>("camera_control");
 
+  auto font_face = std::make_shared<font::face>("assets/ui/mplus-1m-regular.ttf", 0);
+  auto font_shader = std::make_shared<shader>();
+  assert(font_shader->compile_from_source_file("assets/shader/font.vsh", "assets/shader/font.fsh"));
+  auto font_renderer = std::make_shared<font::renderer>(font_face, font_shader);
+
   while (!glfwWindowShouldClose(window)) {
 
     int width, height;
@@ -158,8 +165,11 @@ int main(int argc, char **argv)
 
     scn->root_camera().set_aspect(aspect);
     cc->apply_to(&scn->root_camera());
-    
+
     scn->draw();
+
+    font_renderer->set_screen_size(width, height);
+    font_renderer->render({0.f, 64.f}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, u"あabいうかきくけ\nテストof茜ちゃん");
 
     glfwSwapBuffers(window);
     glfwPollEvents();

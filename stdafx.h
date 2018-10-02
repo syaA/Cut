@@ -1,4 +1,6 @@
 ﻿
+#define GLAD_DEBUG
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -22,6 +24,7 @@
 #include <map>
 #include <unordered_map>
 #include <stack>
+#include <list>
 
 
 #include "vec.h"

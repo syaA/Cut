@@ -92,6 +92,9 @@ private:
 class shader
 {
 public:
+  typedef std::shared_ptr<shader> ptr_t;
+
+public:
   shader() {}
   virtual ~shader() =default;
 
