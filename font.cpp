@@ -39,12 +39,9 @@ FT_GlyphSlot face::get_glyph(char16_t c, int w, int h)
 texture_atlas::texture_atlas(int w, int h)
   : packer_(w, h)
 {
-  // 真っ黒のテクスチャを生成しておく.
-  auto data = std::make_unique<uint8_t[]>(w * h);
-  std::memset(data.get(), 0x00, w * h);
   tex_ = texture::make();
   glBindTexture(GL_TEXTURE_2D, tex_->texture_globj());
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, data.get());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
   glSamplerParameteri(tex_->sampler_globj(), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glSamplerParameteri(tex_->sampler_globj(), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
