@@ -8,6 +8,7 @@
 #include <string_view>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <algorithm>
 #include <functional>
 #include <memory>

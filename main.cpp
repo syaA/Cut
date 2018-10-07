@@ -10,6 +10,7 @@
 
 #include "font.h"
 #include "gui.h"
+#include "glfw_util.h"
 
 
 namespace
@@ -18,33 +19,49 @@ void error_callback(int error, const char* description)
 {
   fprintf(stderr, "Error: %s\n", description);
 }
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
   if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS)) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
+    return;
   }
+
+  gui::glfw_input_key(world()->get<gui::system::ptr_t>("gui"), window, key, scancode, action, mods);
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mod)
 {
+  if (gui::glfw_mouse_button(world()->get<gui::system::ptr_t>("gui"), window, button, action, mod)) {
+    return;
+  }
+
   auto cc = world()->get<camera_control::ptr_t>("camera_control");
   cc->on_mouse_button(window, button, action, mod);
 }
 
 void cursor_pos_callback(GLFWwindow *window, double x, double y)
 {
+  gui::glfw_cursor_move(world()->get<gui::system::ptr_t>("gui"), window, x, y);
+
   auto cc = world()->get<camera_control::ptr_t>("camera_control");
   cc->on_cursor_move(window, x, y);
 }
 
 void cursor_enter_callback(GLFWwindow *window, int enter)
 {
+  gui::glfw_cursor_enter(world()->get<gui::system::ptr_t>("gui"), window, enter);
+
   auto cc = world()->get<camera_control::ptr_t>("camera_control");
   cc->on_cursor_enter(window, enter);
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
+  if (gui::glfw_mouse_scroll(world()->get<gui::system::ptr_t>("gui"), window, xoffset, yoffset)) {
+    return;
+  }
+
   auto cc = world()->get<camera_control::ptr_t>("camera_control");
   cc->on_scroll(window, xoffset, yoffset);
 }
@@ -145,14 +162,16 @@ int main(int argc, char **argv)
   auto font_shader = std::make_shared<shader>();
   assert(font_shader->compile_from_source_file("assets/shader/font.vsh", "assets/shader/font.fsh"));
   auto font_renderer = std::make_shared<font::renderer>(font_face, font_shader);
+  world()->add("font_renderer", font_renderer);
 
   auto gui_shader = std::make_shared<shader>();
   assert(gui_shader->compile_from_source_file("assets/shader/gui.vsh", "assets/shader/gui.fsh"));
   auto gui_tex = texture::make();
   texture::load_from_file(gui_tex, "assets/ui/frame.png");
   auto gui_system = gui::system::create(gui_shader, gui_tex, font_renderer);
-//  gui_system->add<gui::window>(u"テストウィンドウ");
+  world()->add("gui", gui_system);
   gui_system->add_child<gui::window>(u"test window");
+  gui_system->add_child<gui::window>(u"てすとウィンドウ");
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
@@ -166,26 +185,36 @@ int main(int argc, char **argv)
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
     glEnablei(GL_BLEND, 0);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
+    font_renderer->set_screen_size(width, height);
+    gui_system->set_screen_size(width, height);
+
+    glfwPollEvents();
+
     scn->root_camera().set_aspect(aspect);
     cc->apply_to(&scn->root_camera());
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
     scn->draw();
 
-//    font_renderer->set_screen_size(width, height);
-//    font_renderer->render({0.f, 64.f}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, u"あabいうかきくけ\nテストof茜ちゃん");
-    gui_system->set_screen_size(width, height);
     gui_system->draw();
 
 
+    if (0) {
+      double x, y;
+      glfwGetCursorPos(window, &x, &y);
+      std::basic_stringstream<char16_t> ss;
+      ss << x << ", " << y;
+      font_renderer->render({(float)x, (float)y}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, ss.str());
+    }
+
+
     glfwSwapBuffers(window);
-    glfwPollEvents();
   }
 
   glfwDestroyWindow(window);

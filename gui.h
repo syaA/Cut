@@ -1,4 +1,6 @@
 ﻿
+#pragma once
+
 
 #include "font.h"
 #include "shader.h"
@@ -32,21 +34,28 @@ enum MouseButton
 };
 
 enum MouseAction {
-  MouseAction_Press,
   MouseAction_Release,
+  MouseAction_Press,
 };
 
 enum ModKey
 {
+  ModKey_None = 0x00,
   ModKey_Shift = 0x01,
   ModKey_Control = 0x02,
   ModKey_Alt = 0x04,
 };
 
 enum KeyAction {
-  KeyAction_Press,
   KeyAction_Release,
+  KeyAction_Press,
   KeyAction_Repeat,
+};
+
+struct event_result
+{
+  bool accept;
+  bool recalc_layout;
 };
 
 
@@ -88,13 +97,13 @@ public:
   virtual void draw(draw_context&) const =0;
   virtual void calc_layout(calc_layout_context&) {}
 
-  virtual bool on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
-  virtual bool on_cursor_move(const vec2&);
-  virtual bool on_cursor_enter(const vec2&);
-  virtual bool on_cursor_leave(const vec2&);
-  virtual bool on_mouse_scroll(const vec2&);
-  virtual bool on_input_key(int key, int scancode, KeyAction action, ModKey mod);
-  virtual bool on_input_char(char16_t code);
+  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_move(const vec2&);
+  virtual event_result on_cursor_enter(const vec2&);
+  virtual event_result on_cursor_leave(const vec2&);
+  virtual event_result on_mouse_scroll(const vec2&);
+  virtual event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
+  virtual event_result on_input_char(char16_t code);
 
   void set_local_pos(const vec2& p) { local_pos_ = p; }
   const vec2& local_pos() const { return local_pos_; }
@@ -121,6 +130,14 @@ public:
 public:
   virtual void draw(draw_context&) const;
 
+  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_move(const vec2&);
+  virtual event_result on_cursor_enter(const vec2&);
+  virtual event_result on_cursor_leave(const vec2&);
+  virtual event_result on_mouse_scroll(const vec2&);
+  virtual event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
+  virtual event_result on_input_char(char16_t code);
+
   template<class T, class... Args>
   typename T::ptr_t add_child(Args... args)
   {
@@ -132,6 +149,9 @@ public:
   void remove_child(component_ptr_t);
   void clear_child();
 
+  void set_focus(component_ptr_t);
+  component_ptr_t focus() const;
+
 protected:
   array_t& child_array() { return child_array_; }
 
@@ -140,11 +160,16 @@ protected:
 
 private:
   array_t child_array_;
+  component_ptr_t focused_;
+
 };
 
 
 class system : public component_set, public shared_ptr_creator<system>
 {
+public:
+  using shared_ptr_creator::ptr_t;
+
 public:
   ~system();
 
@@ -152,6 +177,14 @@ public:
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
   void calc_layout();
+
+  bool on_mouse_button_root(const vec2&, MouseButton, MouseAction, ModKey);
+  bool on_cursor_move_root(const vec2&);
+  bool on_cursor_enter_root(const vec2&);
+  bool on_cursor_leave_root(const vec2&);
+  bool on_mouse_scroll_root(const vec2&);
+  bool on_input_key_root(int key, int scancode, KeyAction action, ModKey mod);
+  bool on_input_char_root(char16_t code);
 
   font::renderer::ptr_t font_renderer() { return font_renderer_; }
   system_property& property() { return property_; }
@@ -169,6 +202,27 @@ private:
   system_property property_;
 };
 
+
+class drag_control
+{
+public:
+  drag_control();
+  virtual ~drag_control() =default;
+
+  event_result on_mouse_button(component*, const vec2&, MouseButton, MouseAction, ModKey);
+  event_result on_cursor_move(component*, const vec2&);
+
+  void set_area(const vec2& pos, const vec2& size) { area_pos_ = pos; area_size_ = size; }
+
+private:
+  vec2 start_pos_;
+  vec2 cur_pos_;
+  vec2 area_pos_;
+  vec2 area_size_;
+  bool on_drag_;
+};
+
+
 class window : public component_set, public shared_ptr_creator<window>
 {
 public:
@@ -180,8 +234,12 @@ public:
   virtual void draw(draw_context&) const;
   virtual void calc_layout(calc_layout_context&);
 
+  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_move(const vec2&);
+
 private:
   vec2 name_pos_;
+  drag_control drag_;
 };
 
 class button : public component

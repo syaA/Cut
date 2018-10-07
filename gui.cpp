@@ -11,6 +11,17 @@ vertex_decl gui_vertex_decl[] = {
   { Semantics_TexCoord_0, GL_FLOAT, 2, offsetof(gui::vertex, uv), sizeof(gui::vertex) },
 };
 
+
+bool is_in_area(const vec2& p, const vec2& pos, const vec2& size)
+{
+  if (p.x < pos.x) { return false; }
+  if (p.y < pos.y) { return false; }
+  if (p.x > (pos.x + size.x)) { return false; }
+  if (p.y > (pos.y + size.y)) { return false; }
+
+  return true;
+}
+
 } // end of namespace
 
 namespace gui
@@ -56,39 +67,39 @@ component::component(const string& name)
 {
 }
 
-bool component::on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey)
+event_result component::on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_cursor_move(const vec2&)
+event_result component::on_cursor_move(const vec2&)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_cursor_enter(const vec2&)
+event_result component::on_cursor_enter(const vec2&)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_cursor_leave(const vec2&)
+event_result component::on_cursor_leave(const vec2&)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_mouse_scroll(const vec2&)
+event_result component::on_mouse_scroll(const vec2&)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
+event_result component::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
 {
-  return false;
+  return { false, false };
 }
 
-bool component::on_input_char(char16_t code)
+event_result component::on_input_char(char16_t code)
 {
-  return false;
+  return { false, false };
 }
 
 
@@ -100,11 +111,60 @@ void component_set::draw(draw_context& cxt) const
   }
 }
 
+event_result component_set::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
+{
+  event_result r = { false, false };
+  for (auto c : child_array()) {
+    if (is_in_area(p, c->local_pos(), c->size())) {
+      r = c->on_mouse_button(p, button, action, mod);
+      if (r.accept) {
+        set_focus(c);
+        break;
+      }
+    }
+  }
+  return r;
+}
+
+event_result component_set::on_cursor_move(const vec2&)
+{
+  return { false, false };
+}
+
+event_result component_set::on_cursor_enter(const vec2&)
+{
+  return { false, false };
+}
+
+event_result component_set::on_cursor_leave(const vec2&)
+{
+  return { false, false };
+}
+
+event_result component_set::on_mouse_scroll(const vec2&)
+{
+  return { false, false };
+}
+
+event_result component_set::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
+{
+  return { false, false };
+}
+
+event_result component_set::on_input_char(char16_t code)
+{
+  return { false, false };
+}
+
+
 void component_set::add_child(component_ptr_t p) {
   child_array_.push_back(p);
 }
 
 void component_set::remove_child(component_ptr_t p) {
+  if (focused_ == p) {
+    focused_ = 0;
+  }
   child_array_.erase(std::find(
     child_array_.begin(), child_array_.end(), p));
 }
@@ -112,6 +172,17 @@ void component_set::remove_child(component_ptr_t p) {
 void component_set::clear_child()
 {
   child_array_.clear();
+  focused_ = 0;
+}
+
+void component_set::set_focus(component_ptr_t p)
+{
+  focused_ = p;
+}
+
+component_set::component_ptr_t component_set::focus() const
+{
+  return focused_;
 }
 
 
@@ -158,6 +229,104 @@ void system::calc_layout()
 
 
 
+bool system::on_mouse_button_root(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
+{
+  event_result r = component_set::on_mouse_button(p, button, action, mod);
+  if (r.recalc_layout) {
+    calc_layout();
+  }
+  return r.accept;
+}
+
+bool system::on_cursor_move_root(const vec2& p)
+{
+  event_result r = { false, false };
+  for (auto c : child_array()) {
+    r = c->on_cursor_move(p);
+    if (r.accept) {
+      break;
+    }
+  }
+  if (r.recalc_layout) {
+    calc_layout();
+  }
+  return r.accept;
+}
+
+bool system::on_cursor_enter_root(const vec2& p)
+{
+  return false;
+}
+
+bool system::on_cursor_leave_root(const vec2& p)
+{
+  return false;
+}
+
+bool system::on_mouse_scroll_root(const vec2& s)
+{
+  event_result r = component_set::on_mouse_scroll(s);
+  if (r.recalc_layout) {
+    calc_layout();
+  }
+  return r.accept;
+}
+
+bool system::on_input_key_root(int key, int scancode, KeyAction action, ModKey mod)
+{
+  event_result r = component_set::on_input_key(key, scancode, action, mod);
+  if (r.recalc_layout) {
+    calc_layout();
+  }
+  return r.accept;
+}
+
+bool system::on_input_char_root(char16_t code)
+{
+  event_result r = component_set::on_input_char(code);
+  if (r.recalc_layout) {
+    calc_layout();
+  }
+  return r.accept;
+}
+
+
+
+drag_control::drag_control()
+  : area_pos_(0.f), area_size_(0.f), on_drag_(false)
+{
+}
+
+event_result drag_control::on_mouse_button(component *c, const vec2& p, MouseButton button, MouseAction action, ModKey)
+{
+  if ((button == MouseButton_Left)) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, area_pos_, area_size_)) {
+        cur_pos_ = c->local_pos();
+        start_pos_ = p;
+        on_drag_ = true;
+        return { true, false };
+      }
+    } else {
+      on_drag_ = false;
+      return { true, false };
+    }
+  }
+  return { false, false };
+}
+
+event_result drag_control::on_cursor_move(component *c, const vec2& p)
+{
+  if (on_drag_) {
+    vec2 diff = p - start_pos_;
+    c->set_local_pos(cur_pos_ + diff);
+    return { true, true };
+  }
+  return { false, false };
+}
+
+
+
 window::window(const string& name)
   : component_set(name)
 {
@@ -198,7 +367,7 @@ void window::draw(draw_context& cxt) const
     8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15
   };
   cxt.draw(vertex_array, countof(vertex_array), index_array, countof(index_array));
-  cxt.draw_font(local_pos() + name_pos_, name());
+  cxt.draw_font(name_pos_, name());
 
   component_set::draw(cxt);
 }
@@ -220,7 +389,22 @@ void window::calc_layout(calc_layout_context& cxt)
     width = std::max(width, c->size().x);
   }
   cxt.pop_pos(prev);
-  set_size({width, pos.y + prop.mergin});
+  set_size({width, pos.y + prop.mergin - local_pos().y});
+
+  drag_.set_area(local_pos(), vec2(width, name_pos_.y));
 }
+
+event_result window::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
+{
+  event_result r = drag_.on_mouse_button(this, p, button, action, mod);
+  return r;
+}
+
+event_result window::on_cursor_move(const vec2& p)
+{
+  event_result r = drag_.on_cursor_move(this, p);
+  return r;
+}
+
 
 } // end of namespace gui
