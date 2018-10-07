@@ -55,6 +55,43 @@ void draw_context::draw(const vertex* vertex_array, int vertex_cnt,
                  index_array);
 }
 
+void draw_context::draw_rect(const vec2& pos, const vec2& size)
+{
+  auto x = pos.x;
+  auto y = pos.y;
+  auto w = size.x;
+  auto h = size.y;
+  float r = 10.f;
+  const vertex vertex_array[] = {
+    // TL
+    { { x,     y     }, { .0f, .0f} },
+    { { x,     y + r }, { .0f, .5f} },
+    { { x + r, y     }, { .5f, .0f} },
+    { { x + r, y + r }, { .5f, .5f} },
+    // TR
+    { { x + w - r, y     }, { .5f, .0f} },
+    { { x + w - r, y + r }, { .5f, .5f} },
+    { { x + w,     y     }, { .0f, .0f} },
+    { { x + w,     y + r }, { .0f, .5f} },
+    // BL
+    { { x,     y + h - r }, { .0f, .5f} },
+    { { x,     y + h     }, { .0f, .0f} },
+    { { x + r, y + h - r }, { .5f, .5f} },
+    { { x + r, y + h     }, { .5f, .0f} },
+    // BR
+    { { x + w - r, y + h - r }, { .5f, .5f} },
+    { { x + w - r, y + h     }, { .5f, .0f} },
+    { { x + w,     y + h - r }, { .0f, .5f} },
+    { { x + w,     y + h     }, { .0f, .0f} },
+  };
+  static const uint32_t index_array[] = {
+    0, 1, 2, 2, 1, 3, 2, 3, 4, 4, 3, 5, 4, 5, 6, 6, 5, 7,
+    1, 8, 3, 3, 8, 10, 3, 10, 5, 5, 10, 12, 5, 12, 7, 7, 12, 14,
+    8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15
+  };
+  draw(vertex_array, countof(vertex_array), index_array, countof(index_array));
+}
+
 void draw_context::draw_font(const vec2& pos, const string& str)
 {
   font_renderer->render(pos, { property.font_size, property.font_size }, property.font_color, str);
@@ -210,7 +247,7 @@ void system::draw()
 {
   glDisable(GL_DEPTH_TEST);
 
-  font_renderer_->set_screen_size(screen_size_.x, screen_size_.y);
+  font_renderer_->set_screen_size((int)screen_size_.x, (int)screen_size_.y);
 
   draw_context cxt = {
     shader_, texture_, vertex_buffer_, font_renderer_, screen_size_, property_ };
@@ -308,8 +345,10 @@ event_result drag_control::on_mouse_button(component *c, const vec2& p, MouseBut
         return { true, false };
       }
     } else {
-      on_drag_ = false;
-      return { true, false };
+      if (on_drag_) {
+        on_drag_ = false;
+        return { true, false };
+      }
     }
   }
   return { false, false };
@@ -334,39 +373,7 @@ window::window(const string& name)
 
 void window::draw(draw_context& cxt) const
 {
-  auto x = local_pos().x;
-  auto y = local_pos().y;
-  auto w = size().x;
-  auto h = size().y;
-  float r = 10.f;
-  const vertex vertex_array[] = {
-    // TL
-    { { x,     y     }, { .0f, .0f} },
-    { { x,     y + r }, { .0f, .5f} },
-    { { x + r, y     }, { .5f, .0f} },
-    { { x + r, y + r }, { .5f, .5f} },
-    // TR
-    { { x + w - r, y     }, { .5f, .0f} },
-    { { x + w - r, y + r }, { .5f, .5f} },
-    { { x + w,     y     }, { .0f, .0f} },
-    { { x + w,     y + r }, { .0f, .5f} },
-    // BL
-    { { x,     y + h - r }, { .0f, .5f} },
-    { { x,     y + h     }, { .0f, .0f} },
-    { { x + r, y + h - r }, { .5f, .5f} },
-    { { x + r, y + h     }, { .5f, .0f} },
-    // BR
-    { { x + w - r, y + h - r }, { .5f, .5f} },
-    { { x + w - r, y + h     }, { .5f, .0f} },
-    { { x + w,     y + h - r }, { .0f, .5f} },
-    { { x + w,     y + h     }, { .0f, .0f} },
-  };
-  const uint32_t index_array[] = {
-    0, 1, 2, 2, 1, 3, 2, 3, 4, 4, 3, 5, 4, 5, 6, 6, 5, 7,
-    1, 8, 3, 3, 8, 10, 3, 10, 5, 5, 10, 12, 5, 12, 7, 7, 12, 14,
-    8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15
-  };
-  cxt.draw(vertex_array, countof(vertex_array), index_array, countof(index_array));
+  cxt.draw_rect(local_pos(), size());
   cxt.draw_font(name_pos_, name());
 
   component_set::draw(cxt);
@@ -381,6 +388,7 @@ void window::calc_layout(calc_layout_context& cxt)
   pos.x += prop.mergin;
   pos.y += -name_area.y + prop.mergin;
   name_pos_ = pos;
+  pos.y += prop.mergin;
   vec2 prev = cxt.push_pos(pos);
   for (auto c : child_array()) {
     c->set_local_pos(pos);
@@ -389,14 +397,17 @@ void window::calc_layout(calc_layout_context& cxt)
     width = std::max(width, c->size().x);
   }
   cxt.pop_pos(prev);
-  set_size({width, pos.y + prop.mergin - local_pos().y});
+  set_size({width, pos.y - local_pos().y});
 
-  drag_.set_area(local_pos(), vec2(width, name_pos_.y));
+  drag_.set_area(local_pos(), vec2(width, name_area.h + prop.mergin));
 }
 
 event_result window::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
 {
   event_result r = drag_.on_mouse_button(this, p, button, action, mod);
+  if (!r.accept) {
+    r = component_set::on_mouse_button(p, button, action, mod);
+  }
   return r;
 }
 
@@ -406,5 +417,63 @@ event_result window::on_cursor_move(const vec2& p)
   return r;
 }
 
+
+
+button::button(const string& name, bool *notice)
+  : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
+    in_press_(false), notice_variable_(notice), notice_function_(0)
+{
+}
+
+button::button(const string& name, callback_t notice)
+  : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
+    in_press_(false), notice_variable_(0), notice_function_(notice)
+{
+}
+
+void button::draw(draw_context& cxt) const
+{
+  cxt.draw_rect(area_pos_, area_size_);
+  cxt.draw_font(name_pos_, name());
+}
+
+void button::calc_layout(calc_layout_context& cxt)
+{
+  const system_property& prop = cxt.property;
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  area_pos_ = local_pos() + vec2(prop.mergin, 0.f);
+  area_size_.x = name_area.w + prop.mergin * 2.f;
+  area_size_.y = name_area.h + prop.mergin * 2.f;
+  name_pos_ = area_pos_ + vec2(prop.mergin, prop.mergin - name_area.y);
+
+  set_size(area_size_ + vec2(prop.mergin, 0.f));
+}
+
+event_result button::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
+{
+  if ((button == MouseButton_Left)) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, area_pos_, area_size_)) {
+        in_press_ = true;
+        return { true, false };
+      }
+    } else {
+      if (is_in_area(p, area_pos_, area_size_)) {
+        if (in_press_) {
+          // クリック認定.
+          if (notice_variable_) {
+            *notice_variable_ = true;
+          }
+          if (notice_function_) {
+            notice_function_();
+          }
+          in_press_ = false;
+          return { true, false };
+        }
+      }
+    }
+  }
+  return { false, false };
+}
 
 } // end of namespace gui

@@ -69,6 +69,7 @@ struct draw_context
   const system_property& property;
 
   void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt);
+  void draw_rect(const vec2& pos, const vec2& size);
   void draw_font(const vec2& pos, const string& str);
 };
 
@@ -242,8 +243,30 @@ private:
   drag_control drag_;
 };
 
-class button : public component
+
+class button : public component, public shared_ptr_creator<window>
 {
+public:
+  typedef std::shared_ptr<button> ptr_t;
+  typedef std::function<void ()> callback_t;
+
+public:
+  button(const string& name, bool *notice);
+  button(const string& name, callback_t);
+
+  virtual void draw(draw_context&) const;
+  virtual void calc_layout(calc_layout_context&);
+
+  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+
+private:
+  vec2 name_pos_;
+  vec2 area_pos_;
+  vec2 area_size_;
+
+  bool in_press_;
+  bool *notice_variable_;
+  callback_t notice_function_;
 };
 
 

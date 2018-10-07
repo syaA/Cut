@@ -170,8 +170,11 @@ int main(int argc, char **argv)
   texture::load_from_file(gui_tex, "assets/ui/frame.png");
   auto gui_system = gui::system::create(gui_shader, gui_tex, font_renderer);
   world()->add("gui", gui_system);
-  gui_system->add_child<gui::window>(u"test window");
-  gui_system->add_child<gui::window>(u"てすとウィンドウ");
+//  gui_system->add_child<gui::window>(u"test window");
+  auto win = gui_system->add_child<gui::window>(u"てすとウィンドウ");
+  bool visible_mouse_point = false;
+  win->add_child<gui::button>(u"マウス座標", [&](){ visible_mouse_point = !visible_mouse_point; });
+  win->add_child<gui::button>(u"test", [&](){ std::cout << "click!" << std::endl; });
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
@@ -204,8 +207,7 @@ int main(int argc, char **argv)
 
     gui_system->draw();
 
-
-    if (0) {
+    if (visible_mouse_point) {
       double x, y;
       glfwGetCursorPos(window, &x, &y);
       std::basic_stringstream<char16_t> ss;
