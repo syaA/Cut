@@ -48,16 +48,29 @@ texture_atlas::texture_atlas(int w, int h)
 
 rect texture_atlas::register_char(FT_GlyphSlot glyph)
 {
-  rect r = packer_.add({0, 0, glyph->bitmap.pitch, (int)glyph->bitmap.rows});
+  int width = glyph->bitmap.pitch;
+  int height = (int)glyph->bitmap.rows;
+  if ( width == 0) {
+    width = 1;
+  }
+  if ( height == 0) {
+    height = 1;
+  }
+  rect r = packer_.add({0, 0, width, height});
   if (r.empty()) {
     return r;
   }
 
+  void * buf = glyph->bitmap.buffer;
+  if (!buf) {
+    static char dummy[] = {0};
+    buf = dummy;
+  }
   int pixel_store = 0;
   glGetIntegerv(GL_UNPACK_ALIGNMENT, &pixel_store);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glBindTexture(GL_TEXTURE_2D, tex_->texture_globj());
-  glTexSubImage2D(GL_TEXTURE_2D, 0, r.x, r.y, r.w, r.h, GL_RED, GL_UNSIGNED_BYTE, glyph->bitmap.buffer);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, r.x, r.y, r.w, r.h, GL_RED, GL_UNSIGNED_BYTE, buf);
   glPixelStorei(GL_UNPACK_ALIGNMENT, pixel_store);
 
   return r;
@@ -81,6 +94,107 @@ renderer::~renderer()
 }
 
 size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u16string_view str, vec2 *end)
+{
+  prepare_font(size, str);
+
+  std::vector<vertex> vertex_array;
+  vertex_array.reserve(str.size() * 2 + 2);
+  static const float tex_size = (float)TEXTURE_SIZE;
+  float bol = pos.x;
+  for (auto c : str) {
+    switch (c) {
+    case u'\n':
+      pos.y += face_->get_height();
+      pos.x = bol;
+      continue;
+    case u'\r':
+      pos.x = bol;
+      continue;
+    }
+    auto info = glyph_table_[{c, size.x, size.y}];
+    auto xy = vertex_from_screen({pos.x + info.bx, pos.y - info.by});
+    auto wh = vec2(info.uv.w / (screen_size_.x / 2.f), info.uv.h / (screen_size_.y / 2.f));
+    auto uv = vec2((info.uv.x + 0.5f) / tex_size , (info.uv.y + 0.5f) / tex_size);
+    auto uvwh = vec2((info.uv.w - 1.f)/ tex_size, (info.uv.h - 1.f) / tex_size);
+    vertex v;
+    v.col = col;
+    v.pos = { xy.x, xy.y - wh.y };
+    v.uv = { uv.x, uv.y + uvwh.y };
+    vertex_array.push_back(v);
+    v.pos = { xy.x, xy.y };
+    v.uv = uv;
+    vertex_array.push_back(v);
+    v.pos = { xy.x + wh.x, xy.y - wh.y };
+    v.uv = { uv.x + uvwh.x, uv.y + uvwh.y };
+    vertex_array.push_back(v);
+    v.pos = { xy.x + wh.x, xy.y - wh.y };
+    v.uv = { uv.x + uvwh.x, uv.y + uvwh.y };
+    vertex_array.push_back(v);
+    v.pos = { xy.x, xy.y };
+    v.uv = uv;
+    vertex_array.push_back(v);
+    v.pos = { xy.x + wh.x, xy.y };
+    v.uv = { uv.x + uvwh.x, uv.y };
+    vertex_array.push_back(v);
+    pos.x += info.feed;
+  }
+  if (end) {
+    *end = screen_from_vertex(pos);
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, vertex_array.size() * sizeof(vertex), vertex_array.data(), GL_STATIC_DRAW);
+
+  shader_->use();
+  static const vertex_decl vertex_decl[] = {
+    { Semantics_Position, GL_FLOAT, 2, offsetof(vertex, pos), sizeof(vertex) },
+    { Semantics_Color, GL_FLOAT, 4, offsetof(vertex, col), sizeof(vertex) },
+    { Semantics_TexCoord_0, GL_FLOAT, 2, offsetof(vertex, uv), sizeof(vertex) },
+  };
+  for (auto& decl : vertex_decl) {
+    shader_->set_attrib(decl);
+  }
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, glyph_tex_.texture()->texture_globj());
+  glBindSampler(0, glyph_tex_.texture()->sampler_globj());
+  shader_->set_uniform("glyph_sampler", 0);
+
+  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertex_array.size());
+
+  return vertex_array.size() / 6;
+}
+
+rect renderer::get_area(const ivec2& size, std::u16string_view str, vec2 *end)
+{
+  prepare_font(size, str);
+
+  vec2 lr(0.f);
+  vec2 rb(0.f);
+  vec2 pos(0.f);
+  for (auto c : str) {
+    switch (c) {
+    case u'\n':
+      pos.y += face_->get_height();
+      rb.y = std::max(pos.y, rb.y);
+      pos.x = 0.f;
+      continue;
+    case u'\r':
+      pos.x = 0.f;
+      continue;
+    }
+    auto info = glyph_table_[{c, size.x, size.y}];
+    lr.y = std::min(lr.y, pos.y - info.by);
+    pos.x += info.feed;
+    rb.x = std::max(pos.x, rb.x);
+  }
+  if (end) {
+    *end = lr;
+  }
+
+  return { (int)lr.x, (int)lr.y, (int)(rb.x - lr.x), (int)(rb.y - lr.y)};
+}
+
+void renderer::prepare_font(const ivec2& size, std::u16string_view str)
 {
   // テクスチャを準備.
   // 途中で失敗したらクリアして一度だけやりなおす.
@@ -116,72 +230,15 @@ size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u16s
       tex_done = true;
     }
   }
+}
 
-  std::vector<vertex> vertex_array;
-  vertex_array.reserve(str.size() * 2 + 2);
-  static const float tex_size = (float)TEXTURE_SIZE;
-  float bol = pos.x;
-  for (auto c : str) {
-    switch (c) {
-    case u'\n':
-      pos.y += face_->get_height();
-      pos.x = bol;
-      continue;
-    case u'\r':
-      pos.x = bol;
-      continue;
-    }
-    auto info = glyph_table_[{c, size.x, size.y}];
-    auto xy = vec2((pos.x + info.bx) / screen_size_.x * 2.f - 1.f, (pos.y - info.by) / screen_size_.y * -2.f + 1.f);
-    auto wh = vec2(info.uv.w / (screen_size_.x / 2.f), info.uv.h / (screen_size_.y / 2.f));
-    auto uv = vec2((info.uv.x + 0.5f) / tex_size , (info.uv.y + 0.5f) / tex_size);
-    auto uvwh = vec2((info.uv.w - 1.f)/ tex_size, (info.uv.h - 1.f) / tex_size);
-    vertex v;
-    v.col = col;
-    v.pos = { xy.x, xy.y - wh.y };
-    v.uv = { uv.x, uv.y + uvwh.y };
-    vertex_array.push_back(v);
-    v.pos = { xy.x, xy.y };
-    v.uv = uv;
-    vertex_array.push_back(v);
-    v.pos = { xy.x + wh.x, xy.y - wh.y };
-    v.uv = { uv.x + uvwh.x, uv.y + uvwh.y };
-    vertex_array.push_back(v);
-    v.pos = { xy.x + wh.x, xy.y - wh.y };
-    v.uv = { uv.x + uvwh.x, uv.y + uvwh.y };
-    vertex_array.push_back(v);
-    v.pos = { xy.x, xy.y };
-    v.uv = uv;
-    vertex_array.push_back(v);
-    v.pos = { xy.x + wh.x, xy.y };
-    v.uv = { uv.x + uvwh.x, uv.y };
-    vertex_array.push_back(v);
-    pos.x += info.feed;
-  }
-  if (end) {
-    *end = pos;
-  }
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, vertex_array.size() * sizeof(vertex), vertex_array.data(), GL_STATIC_DRAW);
-
-  shader_->use();
-  static const vertex_decl vertex_decl[] = {
-    { Semantics_Position, GL_FLOAT, 2, offsetof(vertex, pos), sizeof(vertex) },
-    { Semantics_Color, GL_FLOAT, 4, offsetof(vertex, col), sizeof(vertex) },
-    { Semantics_TexCoord_0, GL_FLOAT, 2, offsetof(vertex, uv), sizeof(vertex) },
-  };
-  for (auto& decl : vertex_decl) {
-    shader_->set_attrib(decl);
-  }
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, glyph_tex_.texture()->texture_globj());
-  glBindSampler(0, glyph_tex_.texture()->sampler_globj());
-  shader_->set_uniform("glyph_sampler", 0);
-
-  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertex_array.size());
-
-  return vertex_array.size() / 6;
+vec2 renderer::vertex_from_screen(const vec2& v)
+{
+  return {v.x / screen_size_.x * 2.f - 1.f, v.y / screen_size_.y * -2.f + 1.f};
+}
+vec2 renderer::screen_from_vertex(const vec2& v)
+{
+  return {(v.x + 1.f) /2.f * screen_size_.x, (v.y - 1.f) / -2.f * screen_size_.x};
 }
 
 

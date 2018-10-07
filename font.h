@@ -96,11 +96,19 @@ public:
 
 public:
   renderer(face::ptr_t, shader::ptr_t);
-  ~renderer();
+  virtual ~renderer();
 
   size_t render(vec2 pos, const ivec2& size, const color&, std::u16string_view, vec2 *end = 0);
+  rect get_area(const ivec2& size, std::u16string_view, vec2 *end=0);
+
+  void prepare_font(const ivec2& size, std::u16string_view);
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
+
+protected:
+  // 座標変換.
+  vec2 vertex_from_screen(const vec2&);
+  vec2 screen_from_vertex(const vec2&);
 
 private:
   face::ptr_t face_;

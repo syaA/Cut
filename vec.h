@@ -97,8 +97,10 @@ struct vec : public BaseT
   vec(const vec& o) : base_t(o) {}
   vec(std::initializer_list<value_t> init) : base_t(init) {}
 
-  float operator[](int i) const { return base_t::v[i]; }
-  float& operator[](int i) { return base_t::v[i]; }
+  value_t operator[](int i) const { return base_t::v[i]; }
+  value_t& operator[](int i) { return base_t::v[i]; }
+  template<int Index>
+  value_t get() { return base_t::v[Index]; }
 
   template<class Pred>
   vec& map(Pred p) {for (int i=0; i<N; ++i) { p(base_t::v[i]); } return *this; }

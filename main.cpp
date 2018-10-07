@@ -9,6 +9,7 @@
 #include "resource_repository.h"
 
 #include "font.h"
+#include "gui.h"
 
 
 namespace
@@ -145,6 +146,15 @@ int main(int argc, char **argv)
   assert(font_shader->compile_from_source_file("assets/shader/font.vsh", "assets/shader/font.fsh"));
   auto font_renderer = std::make_shared<font::renderer>(font_face, font_shader);
 
+  auto gui_shader = std::make_shared<shader>();
+  assert(gui_shader->compile_from_source_file("assets/shader/gui.vsh", "assets/shader/gui.fsh"));
+  auto gui_tex = texture::make();
+  texture::load_from_file(gui_tex, "assets/ui/frame.png");
+  auto gui_system = gui::system::create(gui_shader, gui_tex, font_renderer);
+//  gui_system->add<gui::window>(u"テストウィンドウ");
+  gui_system->add_child<gui::window>(u"test window");
+  gui_system->calc_layout();
+  
   while (!glfwWindowShouldClose(window)) {
 
     int width, height;
@@ -168,8 +178,11 @@ int main(int argc, char **argv)
 
     scn->draw();
 
-    font_renderer->set_screen_size(width, height);
-    font_renderer->render({0.f, 64.f}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, u"あabいうかきくけ\nテストof茜ちゃん");
+//    font_renderer->set_screen_size(width, height);
+//    font_renderer->render({0.f, 64.f}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, u"あabいうかきくけ\nテストof茜ちゃん");
+    gui_system->set_screen_size(width, height);
+    gui_system->draw();
+
 
     glfwSwapBuffers(window);
     glfwPollEvents();

@@ -24,6 +24,7 @@
     <ClCompile Include="figure.cpp" />
     <ClCompile Include="font.cpp" />
     <ClCompile Include="glad.cpp" />
+    <ClCompile Include="gui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="pmx_loader.cpp" />
@@ -47,6 +48,7 @@
     <ClInclude Include="entity_world.h" />
     <ClInclude Include="figure.h" />
     <ClInclude Include="font.h" />
+    <ClInclude Include="gui.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="model.h" />

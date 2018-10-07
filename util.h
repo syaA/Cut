@@ -23,3 +23,24 @@ inline float clamp(float x, float mn, float mx) { x < mn ? mn : x > mx ? mx : x;
 
 inline bool is_power_of_2(int n) { return (n & (n - 1)) == 0; }
 
+
+template<class T>
+class shared_ptr_creator
+{
+public:
+  typedef std::shared_ptr<T> ptr_t;
+
+private:
+  struct holder_t : T
+  {
+    template<class... Args>
+    holder_t(Args&&... args) : T(std::forward<Args>(args)...) {}
+  };
+
+public:
+  template<class... Args>
+  static ptr_t create(Args&&... args)
+  {
+    return std::make_shared<holder_t>(std::forward<Args>(args)...);
+  }
+};
