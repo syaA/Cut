@@ -139,14 +139,6 @@ public:
   virtual void calc_layout(calc_layout_context&);
   virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
-  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
-  virtual event_result on_cursor_move(const vec2&);
-  virtual event_result on_cursor_enter(const vec2&);
-  virtual event_result on_cursor_leave(const vec2&);
-  virtual event_result on_mouse_scroll(const vec2&);
-  virtual event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
-  virtual event_result on_input_char(char16_t code);
-
   template<class T, class... Args>
   typename T::ptr_t add_child(Args... args)
   {

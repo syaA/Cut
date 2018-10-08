@@ -193,51 +193,6 @@ void component_set::make_event_handler_stack(const vec2& p, event_handler_stack_
   }
 }
 
-event_result component_set::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
-{
-  event_result r;
-  for (auto c : child_array()) {
-    if (is_in_area(p, c->local_pos(), c->size())) {
-      r = c->on_mouse_button(p, button, action, mod);
-      if (r.accept) {
-        break;
-      }
-    }
-  }
-  return r;
-}
-
-event_result component_set::on_cursor_move(const vec2&)
-{
-  return { false, false };
-}
-
-event_result component_set::on_cursor_enter(const vec2&)
-{
-  return { false, false };
-}
-
-event_result component_set::on_cursor_leave(const vec2&)
-{
-  return { false, false };
-}
-
-event_result component_set::on_mouse_scroll(const vec2&)
-{
-  return { false, false };
-}
-
-event_result component_set::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
-{
-  return { false, false };
-}
-
-event_result component_set::on_input_char(char16_t code)
-{
-  return { false, false };
-}
-
-
 void component_set::add_child(component_ptr_t p) {
   child_array_.push_back(p);
 }
