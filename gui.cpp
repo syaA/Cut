@@ -222,6 +222,7 @@ system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
   property_.frame_color0 = color(0.f, 0.f, 0.f, 1.f);
   property_.frame_color1 = color(1.f, 1.f, 1.f, .7f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
+  property_.semiactive_color = color(0.75f, 0.75f, 0.75f, 1.f);
   property_.mergin = 5.f;
 }
 
@@ -467,13 +468,15 @@ event_result window::on_cursor_move(const vec2& p)
 
 button::button(const string& name, bool *notice)
   : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
-    in_press_(false), notice_variable_(notice), notice_function_(0)
+    in_press_(false), in_over_(false),
+    notice_variable_(notice), notice_function_(0)
 {
 }
 
 button::button(const string& name, callback_t notice)
   : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
-    in_press_(false), notice_variable_(0), notice_function_(notice)
+    in_press_(false), in_over_(false),
+    notice_variable_(0), notice_function_(notice)
 {
 }
 
@@ -486,9 +489,11 @@ void button::update()
 
 void button::draw(draw_context& cxt) const
 {
-  const color& col1 = in_press_ ? cxt.property.active_color : cxt.property.frame_color1;
-  cxt.draw_rect(area_pos_, area_size_, cxt.property.frame_color0, col1);
-  cxt.draw_font(name_pos_, cxt.property.font_color, name());
+  const system_property& prop = cxt.property;
+  const color& col1 = in_press_ ? prop.active_color :
+                      (in_over_ ? prop.semiactive_color : prop.frame_color1);
+  cxt.draw_rect(area_pos_, area_size_, prop.frame_color0, col1);
+  cxt.draw_font(name_pos_, prop.font_color, name());
 }
 
 void button::calc_layout(calc_layout_context& cxt)
@@ -531,9 +536,16 @@ event_result button::on_mouse_button(const vec2& p, MouseButton button, MouseAct
   return { false, false };
 }
 
+event_result button::on_cursor_enter(const vec2&)
+{
+  in_over_ = true;
+  return { true, false };
+}
+
 event_result button::on_cursor_leave(const vec2&)
 {
   in_press_ = false;
+  in_over_ = false;
   return { true, false };
 }
 

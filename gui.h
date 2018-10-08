@@ -23,6 +23,8 @@ struct system_property
   color frame_color0;
   color frame_color1;
   color active_color;
+  color semiactive_color;
+
   float mergin;
 };
 
@@ -262,6 +264,7 @@ public:
   virtual void calc_layout(calc_layout_context&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_enter(const vec2&);
   virtual event_result on_cursor_leave(const vec2&);
 
 private:
@@ -270,6 +273,7 @@ private:
   vec2 area_size_;
 
   bool in_press_;
+  bool in_over_;
   bool *notice_variable_;
   callback_t notice_function_;
 };
