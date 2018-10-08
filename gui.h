@@ -1,5 +1,4 @@
-﻿
-#pragma once
+﻿#pragma once
 
 
 #include "font.h"
@@ -23,6 +22,7 @@ struct system_property
   int font_size;
   color frame_color0;
   color frame_color1;
+  color active_color;
   float mergin;
 };
 
@@ -44,6 +44,8 @@ enum ModKey
   ModKey_Shift = 0x01,
   ModKey_Control = 0x02,
   ModKey_Alt = 0x04,
+
+  ModKey_All = ModKey_Shift | ModKey_Control | ModKey_Alt,
 };
 
 enum KeyAction {
@@ -56,6 +58,11 @@ struct event_result
 {
   bool accept;
   bool recalc_layout;
+
+  event_result()
+    : event_result(false, false) {}
+  event_result(bool accept, bool recalc)
+    : accept(accept), recalc_layout(recalc) {}
 };
 
 
@@ -68,9 +75,9 @@ struct draw_context
   const vec2 screen_size;
   const system_property& property;
 
-  void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt);
-  void draw_rect(const vec2& pos, const vec2& size);
-  void draw_font(const vec2& pos, const string& str);
+  void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt, const color& c0, const color& c1);
+  void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
+  void draw_font(const vec2& pos, const color& c, const string& str);
 };
 
 
@@ -79,24 +86,22 @@ struct calc_layout_context
   const font::renderer::ptr_t font_renderer;
   const vec2 screen_size;
   const system_property& property;
-
-  vec2 pos;
-
-  vec2 push_pos(const vec2& p) { vec2 r(pos); pos += p; return r; }
-  void pop_pos(const vec2& p) { pos = p; }
 };
 
 
 class system;
 
-class component
+class component : public std::enable_shared_from_this<component>
 {
 public:
   typedef std::shared_ptr<component> ptr_t;
+  typedef std::stack<ptr_t> event_handler_stack_t;
 
 public:
+  virtual void update() =0;
   virtual void draw(draw_context&) const =0;
   virtual void calc_layout(calc_layout_context&) {}
+  virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
   virtual event_result on_cursor_move(const vec2&);
@@ -129,7 +134,10 @@ public:
   typedef std::vector<component_ptr_t> array_t;
 
 public:
+  virtual void update();
   virtual void draw(draw_context&) const;
+  virtual void calc_layout(calc_layout_context&);
+  virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
   virtual event_result on_cursor_move(const vec2&);
@@ -150,9 +158,6 @@ public:
   void remove_child(component_ptr_t);
   void clear_child();
 
-  void set_focus(component_ptr_t);
-  component_ptr_t focus() const;
-
 protected:
   array_t& child_array() { return child_array_; }
 
@@ -161,7 +166,6 @@ protected:
 
 private:
   array_t child_array_;
-  component_ptr_t focused_;
 
 };
 
@@ -174,21 +178,25 @@ public:
 public:
   ~system();
 
+  void update();
   void draw();
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
   void calc_layout();
 
-  bool on_mouse_button_root(const vec2&, MouseButton, MouseAction, ModKey);
-  bool on_cursor_move_root(const vec2&);
-  bool on_cursor_enter_root(const vec2&);
-  bool on_cursor_leave_root(const vec2&);
+  bool on_mouse_button_root(vec2, MouseButton, MouseAction, ModKey);
+  bool on_cursor_move_root(vec2);
+  bool on_cursor_enter_root(vec2);
+  bool on_cursor_leave_root(vec2);
   bool on_mouse_scroll_root(const vec2&);
   bool on_input_key_root(int key, int scancode, KeyAction action, ModKey mod);
   bool on_input_char_root(char16_t code);
 
   font::renderer::ptr_t font_renderer() { return font_renderer_; }
   system_property& property() { return property_; }
+
+  void set_focus(component_ptr_t);
+  component_ptr_t focus() const;
 
 protected:
   system(shader::ptr_t, texture::ptr_t, font::renderer::ptr_t);
@@ -201,6 +209,9 @@ private:
   vec2 screen_size_;
 
   system_property property_;
+
+  vec2 prev_cursor_pos_;
+  std::weak_ptr<component> focused_;
 };
 
 
@@ -210,8 +221,8 @@ public:
   drag_control();
   virtual ~drag_control() =default;
 
-  event_result on_mouse_button(component*, const vec2&, MouseButton, MouseAction, ModKey);
-  event_result on_cursor_move(component*, const vec2&);
+  event_result on_mouse_button(component::ptr_t, const vec2&, MouseButton, MouseAction, ModKey);
+  event_result on_cursor_move(component::ptr_t, const vec2&);
 
   void set_area(const vec2& pos, const vec2& size) { area_pos_ = pos; area_size_ = size; }
 
@@ -254,10 +265,12 @@ public:
   button(const string& name, bool *notice);
   button(const string& name, callback_t);
 
+  virtual void update();
   virtual void draw(draw_context&) const;
   virtual void calc_layout(calc_layout_context&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_leave(const vec2&);
 
 private:
   vec2 name_pos_;

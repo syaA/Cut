@@ -162,6 +162,15 @@ template<class BaseT>
 vec<BaseT> min(const vec<BaseT>& a, const vec<BaseT>& b) { vec<BaseT> r(a); r.zip(std::min); return r; }
 template<class BaseT>
 vec<BaseT> max(const vec<BaseT>& a, const vec<BaseT>& b) { vec<BaseT> r(a); r.zip(std::max); return r; }
+template<class BaseT>
+vec<BaseT> clamp(const vec<BaseT>& a, const vec<BaseT>& mn, const vec<BaseT>& mx)
+{
+  vec<BaseT> r(a);
+  for (int i=0; i<vec<BaseT>::N; ++i) {
+    r[i] = std::min(std::max(r[i], mn[i]), mx[i]);
+  }
+  return r;
+}
 
 typedef vec<vec2_base<float>> vec2;
 typedef vec<vec3_base<float>> vec3;

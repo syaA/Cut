@@ -174,13 +174,21 @@ int main(int argc, char **argv)
   auto win = gui_system->add_child<gui::window>(u"てすとウィンドウ");
   bool visible_mouse_point = false;
   win->add_child<gui::button>(u"マウス座標", [&](){ visible_mouse_point = !visible_mouse_point; });
-  win->add_child<gui::button>(u"test", [&](){ std::cout << "click!" << std::endl; });
+  win->add_child<gui::button>(u"test", [=](){ std::cout << "click!" << std::endl; });
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
+
+    font_renderer->set_screen_size(width, height);
+    gui_system->set_screen_size(width, height);
+
+    gui_system->update();
+
+    glfwPollEvents();
+
     float aspect = width / (float)height;
 
     glViewport(0, 0, width, height);
@@ -191,11 +199,6 @@ int main(int argc, char **argv)
     glEnablei(GL_BLEND, 0);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-
-    font_renderer->set_screen_size(width, height);
-    gui_system->set_screen_size(width, height);
-
-    glfwPollEvents();
 
     scn->root_camera().set_aspect(aspect);
     cc->apply_to(&scn->root_camera());
