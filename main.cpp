@@ -175,6 +175,11 @@ int main(int argc, char **argv)
   bool visible_mouse_point = false;
   win->add_child<gui::button>(u"マウス座標", [&](){ visible_mouse_point = !visible_mouse_point; });
   win->add_child<gui::button>(u"test", [=](){ std::cout << "click!" << std::endl; });
+  int morph = 0;
+  auto cmb = win->add_child<gui::combo_box>(u"combo_box", &morph);
+  cmb->add_item(u"一つ目のアイテム");
+  cmb->add_item(u"2nd item");
+  cmb->add_item(u"第三のもの");
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {

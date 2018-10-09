@@ -78,6 +78,7 @@ struct draw_context
   const system_property& property;
 
   void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt, const color& c0, const color& c1);
+  void draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c);
   void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
   void draw_font(const vec2& pos, const color& c, const string& str);
 };
@@ -100,9 +101,9 @@ public:
   typedef std::stack<ptr_t> event_handler_stack_t;
 
 public:
-  virtual void update() =0;
+  virtual void update() {};
   virtual void draw(draw_context&) const =0;
-  virtual void calc_layout(calc_layout_context&) {}
+  virtual vec2 calc_layout(calc_layout_context&) { return local_pos(); }
   virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
@@ -112,6 +113,8 @@ public:
   virtual event_result on_mouse_scroll(const vec2&);
   virtual event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
   virtual event_result on_input_char(char16_t code);
+  virtual event_result on_acquire_focus();
+  virtual event_result on_lost_focus();
 
   void set_local_pos(const vec2& p) { local_pos_ = p; }
   const vec2& local_pos() const { return local_pos_; }
@@ -138,7 +141,7 @@ public:
 public:
   virtual void update();
   virtual void draw(draw_context&) const;
-  virtual void calc_layout(calc_layout_context&);
+  virtual vec2 calc_layout(calc_layout_context&);
   virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
   template<class T, class... Args>
@@ -238,7 +241,7 @@ public:
   window(const string& name);
 
   virtual void draw(draw_context&) const;
-  virtual void calc_layout(calc_layout_context&);
+  virtual vec2 calc_layout(calc_layout_context&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
   virtual event_result on_cursor_move(const vec2&);
@@ -249,7 +252,7 @@ private:
 };
 
 
-class button : public component, public shared_ptr_creator<window>
+class button : public component, public shared_ptr_creator<button>
 {
 public:
   typedef std::shared_ptr<button> ptr_t;
@@ -261,7 +264,7 @@ public:
 
   virtual void update();
   virtual void draw(draw_context&) const;
-  virtual void calc_layout(calc_layout_context&);
+  virtual vec2 calc_layout(calc_layout_context&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
   virtual event_result on_cursor_enter(const vec2&);
@@ -276,6 +279,53 @@ private:
   bool in_over_;
   bool *notice_variable_;
   callback_t notice_function_;
+};
+
+
+class combo_box : public component, public shared_ptr_creator<combo_box>
+{
+public:
+  typedef std::shared_ptr<combo_box> ptr_t;
+  typedef std::vector<string> item_array_t;
+
+public:
+  combo_box(const string& name, int *value);
+
+  virtual void draw(draw_context&) const;
+  virtual vec2 calc_layout(calc_layout_context&);
+
+  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
+  virtual event_result on_cursor_move(const vec2&);
+  virtual event_result on_cursor_enter(const vec2&);
+  virtual event_result on_cursor_leave(const vec2&);
+  virtual event_result on_lost_focus();
+
+  int add_item(const string&);
+  void remove_item(int);
+  void clear_item();
+
+protected:
+  int get_item_list_index(const vec2&);
+
+private:
+  vec2 name_pos_;
+  vec2 item_pos_;
+  vec2 item_size_;
+  vec2 item_font_pos_;
+  vec2 tri_pos_;
+  vec2 tri_size_;
+  vec2 item_list_pos_;
+  vec2 item_list_size_;
+  vec2 item_list_font_pos_;
+  float item_height_;
+
+  item_array_t item_array_;
+
+  bool in_open_;
+  bool in_press_;
+  bool in_over_;
+  int cur_index_;
+  int *notice_variable_;
 };
 
 
