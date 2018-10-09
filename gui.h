@@ -139,10 +139,10 @@ public:
   typedef std::vector<component_ptr_t> array_t;
 
 public:
-  virtual void update();
-  virtual void draw(draw_context&) const;
-  virtual vec2 calc_layout(calc_layout_context&);
-  virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
+  void update() override;
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   template<class T, class... Args>
   typename T::ptr_t add_child(Args... args)
@@ -240,11 +240,11 @@ public:
 public:
   window(const string& name);
 
-  virtual void draw(draw_context&) const;
-  virtual vec2 calc_layout(calc_layout_context&);
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
 
-  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
-  virtual event_result on_cursor_move(const vec2&);
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_move(const vec2&) override;
 
 private:
   vec2 name_pos_;
@@ -262,13 +262,13 @@ public:
   button(const string& name, bool *notice);
   button(const string& name, callback_t);
 
-  virtual void update();
-  virtual void draw(draw_context&) const;
-  virtual vec2 calc_layout(calc_layout_context&);
+  void update() override;
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
 
-  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
-  virtual event_result on_cursor_enter(const vec2&);
-  virtual event_result on_cursor_leave(const vec2&);
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
 
 private:
   vec2 name_pos_;
@@ -291,14 +291,14 @@ public:
 public:
   combo_box(const string& name, int *value);
 
-  virtual void draw(draw_context&) const;
-  virtual vec2 calc_layout(calc_layout_context&);
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
 
-  virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
-  virtual event_result on_cursor_move(const vec2&);
-  virtual event_result on_cursor_enter(const vec2&);
-  virtual event_result on_cursor_leave(const vec2&);
-  virtual event_result on_lost_focus();
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_move(const vec2&) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
+  event_result on_lost_focus();
 
   int add_item(const string&);
   void remove_item(int);
