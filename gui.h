@@ -329,6 +329,32 @@ private:
 };
 
 
+class check_box : public component, public shared_ptr_creator<check_box>
+{
+public:
+  typedef std::shared_ptr<check_box> ptr_t;
+
+public:
+  check_box(const string& name, bool *value);
+
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
+
+private:
+  vec2 name_pos_;
+  vec2 box_pos_;
+  vec2 box_size_;
+
+  bool in_press_;
+  bool in_over_;
+  bool *notice_variable_;
+};
+
+
 
 } // end of namepsace gui
 

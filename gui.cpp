@@ -771,4 +771,73 @@ int combo_box::get_item_list_index(const vec2& p)
   return -1;
 }
 
+
+
+check_box::check_box(const string& name, bool *value)
+  : component(name), notice_variable_(value),
+    in_press_(false), in_over_(false)
+{
+}
+
+void check_box::draw(draw_context& cxt) const
+{
+  const system_property& prop = cxt.property;
+  const color& border = (in_over_ || in_press_) ? prop.active_color : prop.frame_color0;
+  const color& inside = (*notice_variable_ || in_press_) ? prop.active_color :
+                        in_over_ ? prop.semiactive_color : prop.frame_color1;
+  cxt.draw_rect(box_pos_, box_size_, border, inside);
+  cxt.draw_font(name_pos_, prop.font_color, name());
+}
+
+vec2 check_box::calc_layout(calc_layout_context& cxt)
+{
+  const system_property& prop = cxt.property;
+  box_pos_ = local_pos() + vec2(prop.mergin);
+  box_size_ = vec2((float)prop.font_size);
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = local_pos() + vec2(box_size_.x + 2.f * prop.mergin, prop.mergin - name_area.y);
+  set_size(box_pos_ + box_size_ - local_pos());
+
+  return name_pos_ + vec2(prop.mergin + name_area.w, prop.mergin) - local_pos();
+}
+
+event_result check_box::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)
+{
+  if (button == MouseButton_Left) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, box_pos_, box_size_)) { 
+        in_press_ = true;
+        return { true, false };
+      }
+    } else {
+      if (is_in_area(p, box_pos_, box_size_)) {
+        if (in_press_) {
+          in_press_ = false;
+          *notice_variable_ = !*notice_variable_;
+          return { true, false };
+        }
+      }
+    }
+  }
+  return { false, false };
+}
+
+event_result check_box::on_cursor_enter(const vec2& p)
+{
+  if (is_in_area(p, box_pos_, box_size_)) {
+    in_over_ = true;
+    return { true, false };
+  }
+  
+  return { false, false };
+}
+
+event_result check_box::on_cursor_leave(const vec2&)
+{
+  in_over_ = false;
+
+  return { true, false };
+}
+
+
 } // end of namespace gui
