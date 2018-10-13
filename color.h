@@ -1,33 +1,23 @@
 ﻿
 #pragma once;
 
+template<class ValueT, int N>
+struct color_mem {};
 
-struct color_base
+template<class ValueT>
+struct color_mem<ValueT, 4>
 {
-  static const int N = 4;
-  typedef float value_t;
-  union {
-    struct {
-      float r, g, b, a;
-    };
-    float v[N];
-  };
-  color_base() {}
-  color_base(float r, float g, float b, float a)
-    : r(r), g(g), b(b), a(a)
-  {}
-  color_base(std::initializer_list<float> init)
-    : color_base(0.f, 0.f, 0.f, 0.f)
-  {
-    float *d = v;
-    for (auto f : init) {
-      *d++ = f;
-    }
-  }
-  color_base(const color_base& o)
-    : r(o.r), g(o.g), b(o.b), a(o.a)
-  {}
+  typedef ValueT value_t;
+  float r, g, b, a;
+  value_t *begin() { return &r; }
+  const value_t *begin() const { return &r; }
+  const value_t *end() const { return &a + 1; }
+
+  color_mem() {}
+  color_mem(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+  explicit color_mem(float v) : color_mem(v, v, v, v) {}
+  color_mem(const color_mem& o) : color_mem(o.r, o.g, o.b, o.a) {}
 };
 
-typedef vec<color_base> color;
+typedef vec<float, 4, color_mem> color;
 

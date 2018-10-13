@@ -1,42 +1,26 @@
 ﻿
 #pragma once
 
-struct quarternion_base
+struct quarternion
 {
-  static const int N = 4;
-  typedef float value_t;
-  quarternion_base() {}
-  quarternion_base(float x, float y, float z, float w)
-    : x(x), y(y), z(z), w(w) {}
-  quarternion_base(const quarternion_base& o)
-    : quarternion_base(o.x, o.y, o.z, o.w) {}
-  union {
-    struct {
-      float x, y, z, w;
-    };
-    struct {
-      vec3 v;
-      float w;
-    };
-    float q[4];
-  };
-};
-
-struct quarternion : vec<quarternion_base>
-{
-  typedef vec<quarternion_base> base_t;
+  vec3 v;
+  float w;
 
   quarternion() {}
-  quarternion(const base_t& v) : base_t(v){}
-  quarternion(float x, float y, float z, float w) : base_t(x, y, z, w) {}
+  quarternion(const vec3& v, float w) : v(v), w(w) {}
+  quarternion(float x, float y, float z, float w) : quarternion(vec3(x, y, z), w) {}
   quarternion(std::initializer_list<float> init)
     : quarternion(init.begin()[0], init.begin()[1], init.begin()[2], init.begin()[3])
   {}
-  quarternion(const vec3& v, float w)
-    : quarternion(v.x, v.y, v.z, w) {}
   quarternion(const quarternion& o)
-    : quarternion(o.x, o.y, o.z, o.w) {}
+    : quarternion(o.v, o.w) {}
 
+  quarternion& operator/=(float f)
+  {
+    v /= f;
+    w /= f;
+    return *this;
+  }
   quarternion& operator*=(const quarternion& o)
   {
     float tw = w;
@@ -63,17 +47,21 @@ inline quarternion operator*(const quarternion& a, const quarternion& b)
 {
   quarternion r(a); r *= b; return r;
 }
+inline quarternion operator/(const quarternion& a, float b)
+{
+  quarternion r(a); r /= b; return r;
+}
 
 inline quarternion conj(const quarternion& q) { return quarternion(-q.v, q.w); }
-inline quarternion inverse(const quarternion& q) { return conj(q) / lenq(q); }
-inline vec3 rotate_vec3(const quarternion& q, const vec3& v)
+inline quarternion inverse(const quarternion& q) { return conj(q) / (lenq(q.v) + q.w * q.w); }
+inline vec3 rotate(const quarternion& q, const vec3& v)
 {
-  vec3 t = 2 * cross(q.v, v);
+  vec3 t = 2.f * cross(q.v, v);
   return v + q.w * t + cross(q.v, t);
 }
-inline vec4 rotate_vec4(const quarternion& q, const vec4& v)
+inline vec4 rotate(const quarternion& q, const vec4& v)
 {
-  vec3 t = rotate_vec3(q, as_vec3(v));
+  vec3 t = rotate(q, as_vec3(v));
   return vec4(t.x, t.y, t.z, v.w);
 }
 
@@ -82,9 +70,9 @@ inline matrix to_matrix(const quarternion& q)
   matrix m;
 
   float a = q.w;
-  float b = q.x;
-  float c = q.y;
-  float d = q.z;
+  float b = q.v.x;
+  float c = q.v.y;
+  float d = q.v.z;
   float a2 = a*a;
   float b2 = b*b;
   float c2 = c*c;
