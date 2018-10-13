@@ -812,10 +812,10 @@ void check_box::draw(draw_context& cxt) const
 vec2 check_box::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
-  box_pos_ = local_pos() + vec2(prop.mergin);
+  box_pos_ = local_pos();
   box_size_ = vec2((float)prop.font_size);
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(box_size_.x + 2.f * prop.mergin, prop.mergin - name_area.y);
+  name_pos_ = local_pos() + vec2(box_size_.x + prop.mergin, (float)-name_area.y);
   set_size(box_pos_ + box_size_ - local_pos());
 
   return name_pos_ + vec2(prop.mergin + name_area.w, prop.mergin) - local_pos();
@@ -891,10 +891,10 @@ void radio_button::draw(draw_context& cxt) const
 vec2 radio_button::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
-  box_pos_ = local_pos() + vec2(prop.mergin);
+  box_pos_ = local_pos();
   box_size_ = vec2((float)prop.font_size);
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(box_size_.x + 2.f * prop.mergin, prop.mergin - name_area.y);
+  name_pos_ = local_pos() + vec2(box_size_.x + prop.mergin, (float)-name_area.y);
   set_size(box_pos_ + box_size_ - local_pos());
 
   return name_pos_ + vec2(prop.mergin + name_area.w, prop.mergin) - local_pos();
