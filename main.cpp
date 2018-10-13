@@ -184,6 +184,7 @@ int main(int argc, char **argv)
   win->add_child<gui::radio_button>(u"radio_button", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
   win->add_child<gui::radio_button>(u"ラジオボタン", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
   win->add_child<gui::radio_button>(u"らじおボタン", &mode, 2);
+  win->add_child<gui::label>(u"ラベル");
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {

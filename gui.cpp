@@ -938,4 +938,26 @@ event_result radio_button::on_cursor_leave(const vec2&)
   return { true, false };
 }
 
+
+
+label::label(const string& name)
+  : component(name), name_pos_(0.f)
+{
+}
+
+void label::draw(draw_context& cxt) const
+{
+  const system_property& prop = cxt.property;
+  cxt.draw_font(name_pos_, prop.font_color, name());
+}
+
+vec2 label::calc_layout(calc_layout_context& cxt)
+{
+  const system_property& prop = cxt.property;
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = local_pos() + vec2(0.f, (float)-name_area.y);
+
+  return vec2((float)name_area.w, (float)prop.font_size);
+}
+
 } // end of namespace gui

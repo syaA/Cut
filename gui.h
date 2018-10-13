@@ -393,5 +393,21 @@ private:
   int value_;
 };
 
+
+class label : public component, public shared_ptr_creator<label>
+{
+public:
+  typedef std::shared_ptr<label> ptr_t;
+
+public:
+  label(const string& name);
+
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+
+private:
+  vec2 name_pos_;
+};
+
 } // end of namepsace gui
 
