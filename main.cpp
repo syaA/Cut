@@ -174,7 +174,7 @@ int main(int argc, char **argv)
   auto win = gui_system->add_child<gui::window>(u"てすとウィンドウ");
   bool visible_mouse_point = false;
   win->add_child<gui::check_box>(u"マウス座標", &visible_mouse_point);
-  win->add_child<gui::button>(u"test", [=](){ std::cout << "click!" << std::endl; });
+  win->add_child<gui::button>(u"ボタン", [=](){ std::cout << "click!" << std::endl; });
   int morph = 0;
   auto cmb = win->add_child<gui::combo_box>(u"combo_box", &morph);
   cmb->add_item(u"一つ目のアイテム");

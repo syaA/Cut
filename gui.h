@@ -284,7 +284,6 @@ public:
 
 private:
   vec2 name_pos_;
-  vec2 area_pos_;
   vec2 area_size_;
 
   bool in_press_;

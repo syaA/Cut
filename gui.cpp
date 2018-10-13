@@ -524,14 +524,14 @@ event_result window::on_cursor_move(const vec2& p)
 
 
 button::button(const string& name, bool *notice)
-  : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
+  : component(name), name_pos_(0.f), area_size_(0.f),
     in_press_(false), in_over_(false),
     notice_variable_(notice), notice_function_(0)
 {
 }
 
 button::button(const string& name, callback_t notice)
-  : component(name), name_pos_(0.f), area_pos_(0.f), area_size_(0.f),
+  : component(name), name_pos_(0.f), area_size_(0.f),
     in_press_(false), in_over_(false),
     notice_variable_(0), notice_function_(notice)
 {
@@ -549,7 +549,7 @@ void button::draw(draw_context& cxt) const
   const system_property& prop = cxt.property;
   const color& col1 = in_press_ ? prop.active_color :
                       (in_over_ ? prop.semiactive_color : prop.frame_color1);
-  cxt.draw_rect(area_pos_, area_size_, prop.frame_color0, col1);
+  cxt.draw_rect(local_pos(), area_size_, prop.frame_color0, col1);
   cxt.draw_font(name_pos_, prop.font_color, name());
 }
 
@@ -557,12 +557,11 @@ vec2 button::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  area_pos_ = local_pos();
   area_size_.x = name_area.w + prop.mergin * 2.f;
-  area_size_.y = name_area.h + prop.mergin * 2.f;
-  name_pos_ = area_pos_ + vec2(prop.mergin, prop.mergin - name_area.y);
-
+  area_size_.y = prop.font_size + prop.mergin * 2.f;
+  name_pos_ = local_pos() + vec2(prop.mergin, prop.mergin - name_area.y);
   set_size(area_size_);
+
   return area_size_;
 }
 
@@ -570,12 +569,12 @@ event_result button::on_mouse_button(const vec2& p, MouseButton button, MouseAct
 {
   if ((button == MouseButton_Left)) {
     if (action == MouseAction_Press) {
-      if (is_in_area(p, area_pos_, area_size_)) {
+      if (is_in_area(p, local_pos(), area_size_)) {
         in_press_ = true;
         return { true, false };
       }
     } else {
-      if (is_in_area(p, area_pos_, area_size_)) {
+      if (is_in_area(p, local_pos(), area_size_)) {
         if (in_press_) {
           in_press_ = false;
           // クリック認定.
