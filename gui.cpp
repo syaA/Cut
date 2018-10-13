@@ -25,16 +25,25 @@ bool is_in_area(const vec2& p, const vec2& pos, const vec2& size)
   return true;
 }
 
-vec2 layout_vertical(vec2 pos, calc_layout_context& cxt, std::vector<component::ptr_t>& component_array)
+vec2 place_compoent_array(vec2 pos, calc_layout_context& cxt, std::vector<component::ptr_t>& component_array)
 {
   const system_property& prop = cxt.property;
-  auto orig = pos;
-  float width = .0f;
+  const auto orig = pos;
+  const float bol = orig.x;
+  float width = 0.f;
   for (auto c : component_array) {
     c->set_local_pos(pos);
     auto diff = c->calc_layout(cxt);
-    pos.y += diff.y + prop.mergin;
-    width = std::max(width, diff.x);
+    width = std::max(width, pos.x + diff.x - orig.x);
+    switch (c->layout_way()) {
+    case LayoutWay_Vertical:
+      pos.x = bol;
+      pos.y += diff.y + prop.mergin;
+      break;
+    case LayoutWay_Horizon:
+      pos.x += diff.x + prop.mergin;
+      break;
+    }
   }
   return { width, pos.y - orig.y };
 }
@@ -131,7 +140,7 @@ void draw_context::draw_font(const vec2& pos, const color& c, const string& str)
 
 
 component::component(const string& name)
-  : name_(name), local_pos_(0.f, 0.f), size_(0.f, 0.f)
+  : name_(name), local_pos_(0.f, 0.f), size_(0.f, 0.f), layout_way_(LayoutWay_Vertical)
 {
 }
 
@@ -212,7 +221,7 @@ void component_set::draw(draw_context& cxt) const
 
 vec2 component_set::calc_layout(calc_layout_context& cxt)
 {
-  set_size(layout_vertical(local_pos(), cxt, child_array()));
+  set_size(place_compoent_array(local_pos(), cxt, child_array()));
   return size();
 }
 
@@ -487,7 +496,7 @@ vec2 window::calc_layout(calc_layout_context& cxt)
   auto pos = local_pos();
   name_pos_ = pos + vec2(prop.mergin, prop.mergin - name_area.y);
   pos += vec2(prop.mergin, prop.mergin - name_area.y + prop.mergin);
-  vec2 size = layout_vertical(pos, cxt, child_array());
+  vec2 size = place_compoent_array(pos, cxt, child_array());
   size.x = std::max(width, size.x + prop.mergin * 2.f);
   size.y = (pos.y + size.y) - local_pos().y;
   set_size(size);

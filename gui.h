@@ -73,6 +73,11 @@ struct draw_context;
 struct calc_layout_context;
 class system;
 
+enum LayoutWay {
+  LayoutWay_Vertical,
+  LayoutWay_Horizon,
+};
+
 class component : public std::enable_shared_from_this<component>
 {
 public:
@@ -101,6 +106,8 @@ public:
   const vec2& size() const { return size_; }
   void set_name(const string& s) { name_ = s; }
   const string& name() const { return name_; }
+  void set_layout_way(LayoutWay l) { layout_way_ = l; }
+  LayoutWay layout_way() const { return layout_way_; }
 
 protected:
   component(const string& name);
@@ -109,6 +116,7 @@ private:
   string name_;
   vec2 local_pos_;
   vec2 size_;
+  LayoutWay layout_way_;
 };
 
 class component_set : public component
