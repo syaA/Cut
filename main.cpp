@@ -180,6 +180,10 @@ int main(int argc, char **argv)
   cmb->add_item(u"一つ目のアイテム");
   cmb->add_item(u"2nd item");
   cmb->add_item(u"第三のもの");
+  int mode = 0;
+  win->add_child<gui::radio_button>(u"radio_button", &mode, 0);
+  win->add_child<gui::radio_button>(u"ラジオボタン", &mode, 1);
+  win->add_child<gui::radio_button>(u"らじおボタン", &mode, 2);
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
