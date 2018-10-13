@@ -304,9 +304,45 @@ void system::recalc_layout()
   }
 }
 
+void system::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+{
+  for (auto c : child_array()) {
+    c->make_event_handler_stack(p, stk);
+  }
+}
+
+std::shared_ptr<window> system::add_window(const string& name)
+{
+  return add_child<window>(name);
+}
+
+std::shared_ptr<window> system::add_window(std::shared_ptr<window> p)
+{
+  add_child(p);
+  return p;
+}
+
+void system::remove_window(component_ptr_t p)
+{
+  remove_child(p);
+}
+
+void system::clear_window()
+{
+  clear_child();
+}
+
 bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action, ModKey mod)
 {
   p = clamp(p, vec2(0.f), screen_size_);
+  // ウィンドウフォーカス.
+  for (auto w : child_array()) {
+    if (is_in_area(p, w->local_pos(), w->size())) {
+      remove_child(w);
+      add_child(w);	// 末尾へ回す.
+    }
+  }
+
   event_handler_stack_t stk;
   make_event_handler_stack(p, stk);
   event_result r;
@@ -508,7 +544,7 @@ vec2 window::calc_layout(calc_layout_context& cxt)
   size.y = (pos.y + size.y) - local_pos().y;
   set_size(size);
 
-  drag_.set_area(local_pos(), vec2(size.x, name_area.h + prop.mergin));
+  drag_.set_area(local_pos(), size);
 
   return size;
 }

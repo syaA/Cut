@@ -174,10 +174,10 @@ int main(int argc, char **argv)
   int morph = 0;
   int mode = 0;
   {
-    auto win = gui_system->add_child<gui::window>(u"てすとウィンドウ");
+    auto win = gui_system->add_window(u"てすとウィンドウ");
     win->add_child<gui::check_box>(u"マウス座標", &visible_mouse_point);
     win->add_child<gui::button>(u"ボタン", [=](){ std::cout << "click!" << std::endl; });
-    auto grp = win->add_child<gui::group>(u"グループ");
+    auto grp = win->add_child<gui::group>(u"グループ", false);
     auto cmb = grp->add_child<gui::combo_box>(u"コンボボックス", &morph);
     cmb->add_item(u"一つ目のアイテム");
     cmb->add_item(u"2nd item");
@@ -188,7 +188,7 @@ int main(int argc, char **argv)
     win->add_child<gui::label>(u"ラベル");
   }
   {
-    auto win = gui_system->add_child<gui::window>(u"test window");
+    auto win = gui_system->add_window(u"test window");
     win->add_child<gui::check_box>(u"mouse position", &visible_mouse_point);
     win->add_child<gui::button>(u"button", [=](){ std::cout << "click!" << std::endl; });
     auto grp = win->add_child<gui::group>(u"group");

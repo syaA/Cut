@@ -15,6 +15,11 @@ struct vertex
   vec2 pos, uv;
 };
 
+enum LayoutWay {
+  LayoutWay_Vertical,
+  LayoutWay_Horizon,
+};
+
 
 struct system_property
 {
@@ -71,12 +76,6 @@ struct event_result
 
 struct draw_context;
 struct calc_layout_context;
-class system;
-
-enum LayoutWay {
-  LayoutWay_Vertical,
-  LayoutWay_Horizon,
-};
 
 class component : public std::enable_shared_from_this<component>
 {
@@ -153,8 +152,9 @@ private:
 
 };
 
+class window;
 
-class system : public component_set, public shared_ptr_creator<system>
+class system : protected component_set, public shared_ptr_creator<system>
 {
 public:
   using shared_ptr_creator::ptr_t;
@@ -167,6 +167,12 @@ public:
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
   void calc_layout();
+  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+
+  std::shared_ptr<window> add_window(const string& name);
+  std::shared_ptr<window> add_window(std::shared_ptr<window>);
+  void remove_window(component_ptr_t);
+  void clear_window();
 
   bool on_mouse_button_root(vec2, MouseButton, MouseAction, ModKey);
   bool on_cursor_move_root(vec2);
@@ -176,11 +182,11 @@ public:
   bool on_input_key_root(int key, int scancode, KeyAction action, ModKey mod);
   bool on_input_char_root(char16_t code);
 
-  font::renderer::ptr_t font_renderer() { return font_renderer_; }
-  system_property& property() { return property_; }
-
   void set_focus(component_ptr_t);
   component_ptr_t focus() const;
+
+  font::renderer::ptr_t font_renderer() { return font_renderer_; }
+  system_property& property() { return property_; }
 
 protected:
   system(shader::ptr_t, texture::ptr_t, font::renderer::ptr_t);
