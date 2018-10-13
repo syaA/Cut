@@ -124,7 +124,7 @@ struct vec : public BaseT
     return true;
   }
   bool operator!=(const vec& b) { return !(*this == b); }
-  
+
   static vec replicate(float v) { return vec(v); }
   static vec zero() { return replicate(0); }
   static vec one() { return replicate(1); }
@@ -170,6 +170,16 @@ vec<BaseT> clamp(const vec<BaseT>& a, const vec<BaseT>& mn, const vec<BaseT>& mx
     r[i] = std::min(std::max(r[i], mn[i]), mx[i]);
   }
   return r;
+}
+template<class BaseT>
+std::ostream& operator<<(std::ostream& o, const vec<BaseT>& v) {
+  const int dim = vec<BaseT>::N;
+  o << "(";
+  for (int i=0; i<dim-1; ++i) {
+    o << v[i] << ",";
+  }
+  o << v[dim-1] << ")";
+  return o;
 }
 
 typedef vec<vec2_base<float>> vec2;
