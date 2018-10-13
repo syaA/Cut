@@ -185,6 +185,8 @@ public:
 protected:
   system(shader::ptr_t, texture::ptr_t, font::renderer::ptr_t);
 
+  void recalc_layout();
+
 private:
   shader::ptr_t shader_;
   texture::ptr_t texture_;

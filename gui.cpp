@@ -258,12 +258,12 @@ system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
 
   // デフォルトプロパティ.
   property_.font_color = color(0.f, 0.f, 0.f, 1.f);
-  property_.font_size = 16;
+  property_.font_size = 12;
   property_.frame_color0 = color(0.f, 0.f, 0.f, 1.f);
   property_.frame_color1 = color(1.f, 1.f, 1.f, .7f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
-  property_.mergin = 5.f;
+  property_.mergin = 2.f;
 }
 
 system::~system()
@@ -292,6 +292,13 @@ void system::calc_layout()
 {
   calc_layout_context cxt = {
     font_renderer_, screen_size_, property_ };
+  component_set::calc_layout(cxt);
+}
+
+void system::recalc_layout()
+{
+  calc_layout_context cxt = {
+    font_renderer_, screen_size_, property_ };
   for (auto c : child_array()) {
     c->calc_layout(cxt);
   }
@@ -316,7 +323,7 @@ bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action
   }
 
   if (r.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   return r.accept;
 }
@@ -353,7 +360,7 @@ bool system::on_cursor_move_root(vec2 p)
   }
 
   if (r_enter.recalc_layout || r_leave.recalc_layout || r_move.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   prev_cursor_pos_ = p;
 
@@ -382,7 +389,7 @@ bool system::on_mouse_scroll_root(const vec2& s)
     r = c->on_mouse_scroll(s);
   }
   if (r.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   return r.accept;
 }
@@ -394,7 +401,7 @@ bool system::on_input_key_root(int key, int scancode, KeyAction action, ModKey m
     r = c->on_input_key(key, scancode, action, mod);
   }
   if (r.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   return r.accept;
 }
@@ -406,7 +413,7 @@ bool system::on_input_char_root(char16_t code)
     r = c->on_input_char(code);
   }
   if (r.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   return r.accept;
 }
@@ -427,7 +434,7 @@ void system::set_focus(component_ptr_t p)
     r_acquire = p->on_acquire_focus();
   }
   if (r_lost.recalc_layout || r_acquire.recalc_layout) {
-    calc_layout();
+    recalc_layout();
   }
   focused_ = p;
 }
@@ -559,7 +566,8 @@ vec2 button::calc_layout(calc_layout_context& cxt)
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
   area_size_.x = name_area.w + prop.mergin * 2.f;
   area_size_.y = prop.font_size + prop.mergin * 2.f;
-  name_pos_ = local_pos() + vec2(prop.mergin, prop.mergin - name_area.y);
+  name_pos_.x = local_pos().x + prop.mergin;
+  name_pos_.y = local_pos().y + (prop.font_size + prop.mergin * 2.f - name_area.h) / 2.f - name_area.y;
   set_size(area_size_);
 
   return area_size_;
