@@ -83,7 +83,6 @@ void draw_context::draw(const vertex* vertex_array, int vertex_cnt,
 
 void draw_context::draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c)
 {
-  float r = 10.f;
   const vertex vertex_array[] = {
     { { p0.x, p0.y }, { 1.f, 1.f} },
     { { p1.x, p1.y }, { 1.f, 1.f} },
@@ -101,7 +100,7 @@ void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0,
   auto y = pos.y;
   auto w = size.x;
   auto h = size.y;
-  float r = 10.f;
+  float r = property.round;
   const vertex vertex_array[] = {
     // TL
     { { x,     y     }, { .0f, .0f} },
@@ -263,6 +262,7 @@ system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
   property_.frame_color1 = color(1.f, 1.f, 1.f, .7f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
+  property_.round = 6.f;
   property_.mergin = 2.f;
 }
 
@@ -526,6 +526,141 @@ event_result window::on_cursor_move(const vec2& p)
 {
   event_result r = drag_.on_cursor_move(shared_from_this(), p);
   return r;
+}
+
+
+
+group::group(const string& name, bool opened)
+  : component_set(name), name_pos_(0.f), tri_size_(0.f),
+    in_open_(opened), in_press_(false), in_over_(false)
+{
+}
+
+void group::draw(draw_context& cxt) const
+{
+  const system_property& prop = cxt.property;
+  cxt.draw_font(name_pos_, prop.font_color, name());
+  {
+    // 枠線.
+    const color inside = { 0.f, 0.f, 0.f, 0.f };
+    auto [x, y] = line_pos_;
+    auto [w, h] = line_size_;
+    auto [l, t] = line_lt_;
+    float r = prop.round;
+    const vertex vertex_array[] = {
+      // TL
+      { { l,     y     }, { .5f, .0f} },
+      { { l,     y + r }, { .5f, .5f} },
+      { { x,     t     }, { .0f, .5f} },
+      { { x + r, t     }, { .5f, .5f} },
+      // TR
+      { { x + w - r, y     }, { .5f, .0f} },
+      { { x + w - r, y + r }, { .5f, .5f} },
+      { { x + w,     y     }, { .0f, .0f} },
+      { { x + w,     y + r }, { .0f, .5f} },
+      // BL
+      { { x,     y + h - r }, { .0f, .5f} },
+      { { x,     y + h     }, { .0f, .0f} },
+      { { x + r, y + h - r }, { .5f, .5f} },
+      { { x + r, y + h     }, { .5f, .0f} },
+      // BR
+      { { x + w - r, y + h - r }, { .5f, .5f} },
+      { { x + w - r, y + h     }, { .5f, .0f} },
+      { { x + w,     y + h - r }, { .0f, .5f} },
+      { { x + w,     y + h     }, { .0f, .0f} },
+    };
+    static const uint32_t index_array[] = {
+      0, 1, 4, 4, 1, 5, 4, 5, 6, 6, 5, 7,
+      2, 8, 3, 3, 8, 10, 5, 12, 7, 7, 12, 14,
+      8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15 };
+    cxt.draw(vertex_array, countof(vertex_array), index_array, countof(index_array), cxt.property.frame_color0, inside);
+  }
+  if (in_over_) {
+    cxt.draw_rect(local_pos(), tri_size_, prop.active_color, prop.semiactive_color);
+  }
+  const color& cc =  in_press_ ? prop.active_color : prop.frame_color0;
+  auto [x, y] = local_pos();
+  if (in_open_) {
+    cxt.draw_triangle(vec2(x,                     y + tri_size_.y * 3.f / 8.f),
+                      vec2(x + tri_size_.x * .5f, y + tri_size_.y * 5.f / 8.f),
+                      vec2(x + tri_size_.x,       y + tri_size_.y * 3.f / 8.f),
+                      cc);
+    component_set::draw(cxt);
+  } else {
+    cxt.draw_triangle(vec2(x + tri_size_.x / 4.f,       y + tri_size_.y / 4.f),
+                      vec2(x + tri_size_.x / 4.f,       y + tri_size_.y * 3.f / 4.f),
+                        vec2(x + tri_size_.x * 3.f / 4.f, y + tri_size_.y / 2.f),
+                      cc);
+  }
+}
+
+vec2 group::calc_layout(calc_layout_context& cxt)
+{
+  const system_property& prop = cxt.property;
+  tri_size_ = vec2(prop.font_size / 2.f + prop.mergin, prop.font_size + prop.mergin * 2.f);
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = local_pos() + vec2(tri_size_.x, (float)prop.font_size);
+  line_pos_ = local_pos() + vec2(prop.mergin, prop.font_size / 2.f);
+  vec2 pos = line_pos_ + vec2(prop.mergin, prop.font_size + prop.mergin);
+  vec2 child_size(0.f);
+  child_size = place_compoent_array(pos, cxt, child_array());
+  child_size.x = std::max(child_size.x, tri_size_.x + name_area.w + prop.mergin);
+  if (!in_open_) {
+    child_size.y = 0.f;
+  }
+  line_size_ = child_size + vec2(prop.mergin) + (pos - line_pos_);
+  line_lt_.x = local_pos().x + tri_size_.x + name_area.w + prop.mergin;
+  line_lt_.y = local_pos().y + tri_size_.y;
+  set_size(tri_size_);
+
+  return line_pos_ + line_size_ + vec2(prop.mergin) - local_pos();
+}
+
+void group::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+{
+  component::make_event_handler_stack(p, stk);
+  if (in_open_) {
+    for (auto c : child_array()) {
+      c->make_event_handler_stack(p, stk);
+    }
+  }
+}
+
+event_result group::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)
+{
+  if (button == MouseButton_Left) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, local_pos(), tri_size_)) {
+        in_press_ = true;
+        return { true, false };
+      }
+    } else {
+      if (is_in_area(p, local_pos(), tri_size_)) {
+        if (in_press_) {
+          in_press_ = false;
+          in_open_ = !in_open_;
+          return { true, true };
+        }
+      }
+    }
+  }
+
+  return { false, false };
+}
+
+event_result group::on_cursor_enter(const vec2& p)
+{
+  if (is_in_area(p, local_pos(), tri_size_)) {
+    in_over_ = true;
+    return { true, false };
+  }
+  return { false, false };
+}
+
+event_result group::on_cursor_leave(const vec2& p)
+{
+  in_over_ = false;
+  return { true, false };
 }
 
 

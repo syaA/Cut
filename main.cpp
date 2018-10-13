@@ -177,26 +177,28 @@ int main(int argc, char **argv)
     auto win = gui_system->add_child<gui::window>(u"てすとウィンドウ");
     win->add_child<gui::check_box>(u"マウス座標", &visible_mouse_point);
     win->add_child<gui::button>(u"ボタン", [=](){ std::cout << "click!" << std::endl; });
-    auto cmb = win->add_child<gui::combo_box>(u"コンボボックス", &morph);
+    auto grp = win->add_child<gui::group>(u"グループ");
+    auto cmb = grp->add_child<gui::combo_box>(u"コンボボックス", &morph);
     cmb->add_item(u"一つ目のアイテム");
     cmb->add_item(u"2nd item");
     cmb->add_item(u"第三のもの");
-    win->add_child<gui::radio_button>(u"ラジオボタン０", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
-    win->add_child<gui::radio_button>(u"ラジオボタン１", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
-    win->add_child<gui::radio_button>(u"ラジオボタン２", &mode, 2);
+    grp->add_child<gui::radio_button>(u"ラジオボタン０", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
+    grp->add_child<gui::radio_button>(u"ラジオボタン１", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
+    grp->add_child<gui::radio_button>(u"ラジオボタン２", &mode, 2);
     win->add_child<gui::label>(u"ラベル");
   }
   {
     auto win = gui_system->add_child<gui::window>(u"test window");
     win->add_child<gui::check_box>(u"mouse position", &visible_mouse_point);
     win->add_child<gui::button>(u"button", [=](){ std::cout << "click!" << std::endl; });
-    auto cmb = win->add_child<gui::combo_box>(u"combo_box", &morph);
+    auto grp = win->add_child<gui::group>(u"group");
+    auto cmb = grp->add_child<gui::combo_box>(u"combo_box", &morph);
     cmb->add_item(u"1st item");
     cmb->add_item(u"２つめのアイテム");
     cmb->add_item(u"3rd item");
-    win->add_child<gui::radio_button>(u"radio_button0", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
-    win->add_child<gui::radio_button>(u"radio_button1", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
-    win->add_child<gui::radio_button>(u"radio_button2", &mode, 2);
+    grp->add_child<gui::radio_button>(u"radio_button0", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
+    grp->add_child<gui::radio_button>(u"radio_button1", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
+    grp->add_child<gui::radio_button>(u"radio_button2", &mode, 2);
     win->add_child<gui::label>(u"label");
   }
   gui_system->calc_layout();

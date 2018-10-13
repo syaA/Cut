@@ -266,6 +266,35 @@ private:
 };
 
 
+class group : public component_set, public shared_ptr_creator<group>
+{
+public:
+  typedef std::shared_ptr<group> ptr_t;
+
+public:
+  group(const string& name, bool opened = true);
+
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
+
+private:
+  vec2 name_pos_;
+  vec2 tri_size_;
+  vec2 line_pos_;
+  vec2 line_size_;
+  vec2 line_lt_;
+
+  bool in_open_;
+  bool in_press_;
+  bool in_over_;
+};
+
+
 class button : public component, public shared_ptr_creator<button>
 {
 public:
