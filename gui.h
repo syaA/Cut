@@ -25,6 +25,7 @@ struct system_property
   color active_color;
   color semiactive_color;
 
+  float round;
   float mergin;
 };
 

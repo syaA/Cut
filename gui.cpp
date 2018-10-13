@@ -397,17 +397,19 @@ bool system::on_input_char_root(char16_t code)
 
 void system::set_focus(component_ptr_t p)
 {
-  if (p == focused_.lock()) {
+  auto prev = focused_.lock();
+  if (p == prev) {
     return;
   }
-  event_result r;
-  if (auto focus = focused_.lock()) {
-      r = focus->on_lost_focus();
+  event_result r_lost;
+  if (prev) {
+    r_lost = prev->on_lost_focus();
   }
+  event_result r_acquire;
   if (p) {
-    r = p->on_acquire_focus();
+    r_acquire = p->on_acquire_focus();
   }
-  if (r.recalc_layout) {
+  if (r_lost.recalc_layout || r_acquire.recalc_layout) {
     calc_layout();
   }
   focused_ = p;
@@ -694,6 +696,7 @@ event_result combo_box::on_mouse_button(const vec2& p, MouseButton button, Mouse
             }
             in_open_ = false;
             in_press_ = false;
+            in_over_ = false;
             return { true, true };
           }
         }
