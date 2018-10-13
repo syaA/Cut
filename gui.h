@@ -69,30 +69,8 @@ struct event_result
 };
 
 
-struct draw_context
-{
-  const shader::ptr_t gui_shader;
-  const texture::ptr_t gui_tex;
-  const GLuint vertex_buffer;
-  const font::renderer::ptr_t font_renderer;
-  const vec2 screen_size;
-  const system_property& property;
-
-  void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt, const color& c0, const color& c1);
-  void draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c);
-  void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
-  void draw_font(const vec2& pos, const color& c, const string& str);
-};
-
-
-struct calc_layout_context
-{
-  const font::renderer::ptr_t font_renderer;
-  const vec2 screen_size;
-  const system_property& property;
-};
-
-
+struct draw_context;
+struct calc_layout_context;
 class system;
 
 class component : public std::enable_shared_from_this<component>
@@ -210,6 +188,31 @@ private:
 
   vec2 prev_cursor_pos_;
   std::weak_ptr<component> focused_;
+};
+
+struct draw_context
+{
+  const shader::ptr_t gui_shader;
+  const texture::ptr_t gui_tex;
+  const GLuint vertex_buffer;
+  const font::renderer::ptr_t font_renderer;
+  const vec2 screen_size;
+  const system_property& property;
+  const component::ptr_t focused;
+
+  void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt, const color& c0, const color& c1);
+  void draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c);
+  void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
+  void draw_font(const vec2& pos, const color& c, const string& str);
+
+  bool is_focused(component::ptr_t p) { return focused == p; }
+};
+
+struct calc_layout_context
+{
+  const font::renderer::ptr_t font_renderer;
+  const vec2 screen_size;
+  const system_property& property;
 };
 
 

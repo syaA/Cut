@@ -197,8 +197,16 @@ void component_set::update()
 
 void component_set::draw(draw_context& cxt) const
 {
+  component::ptr_t focused;
   for (const auto& c : child_array_) {
+    if (cxt.is_focused(c)) {
+      focused = c;
+      continue;
+    }
     c->draw(cxt);
+  }
+  if (focused) {
+    focused->draw(cxt);
   }
 }
 
@@ -266,7 +274,7 @@ void system::draw()
   font_renderer_->set_screen_size((int)screen_size_.x, (int)screen_size_.y);
 
   draw_context cxt = {
-    shader_, texture_, vertex_buffer_, font_renderer_, screen_size_, property_ };
+    shader_, texture_, vertex_buffer_, font_renderer_, screen_size_, property_, focused_.lock() };
 
   component_set::draw(cxt);
 }
