@@ -221,8 +221,9 @@ clamp(const vec<T, Dim, MemberT>& a, const vec<T, Dim, MemberT>& mn, const vec<T
   return r;
 }
 
-template<class T, int Dim, template<class, int> class MemberT>
-std::ostream& operator<<(std::ostream& o, const vec<T, Dim, MemberT>& v) {
+template<class CharT, class TraitsT, class T, int Dim, template<class, int> class MemberT>
+std::basic_ostream<CharT, TraitsT>&
+operator<<(std::basic_ostream<CharT, TraitsT>& o, const vec<T, Dim, MemberT>& v) {
   const int dim = vec<T, Dim, MemberT>::N;
   o << "(";
   for (int i=0; i<dim-1; ++i) {

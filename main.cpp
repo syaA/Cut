@@ -200,6 +200,8 @@ int main(int argc, char **argv)
     grp->add_child<gui::radio_button>(u"radio_button1", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
     grp->add_child<gui::radio_button>(u"radio_button2", &mode, 2);
     win->add_child<gui::label>(u"label");
+    win->add_child<gui::text_box>(u"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
+                                                                     std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
   }
   gui_system->calc_layout();
   

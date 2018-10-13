@@ -196,11 +196,13 @@ event_result component::on_lost_focus()
 }
 
 
-void component_set::update()
+bool component_set::update()
 {
+  bool r = false;
   for (const auto& c : child_array_) {
-    c->update();
+    r = c->update() || r;
   }
+  return r;
 }
 
 void component_set::draw(draw_context& cxt) const
@@ -212,9 +214,6 @@ void component_set::draw(draw_context& cxt) const
       continue;
     }
     c->draw(cxt);
-  }
-  if (focused) {
-    focused->draw(cxt);
   }
 }
 
@@ -271,9 +270,13 @@ system::~system()
   glDeleteBuffers(1, &vertex_buffer_);
 }
 
-void system::update()
+bool system::update()
 {
-  component_set::update();
+  bool r = component_set::update();
+  if (r) {
+    recalc_layout();
+  }
+  return true;
 }
 
 void system::draw()
@@ -286,6 +289,10 @@ void system::draw()
     shader_, texture_, vertex_buffer_, font_renderer_, screen_size_, property_, focused_.lock() };
 
   component_set::draw(cxt);
+
+  if (auto focused = focus()) {
+    focused->draw(cxt);
+  }
 }
 
 void system::calc_layout()
@@ -715,11 +722,12 @@ button::button(const string& name, callback_t notice)
 {
 }
 
-void button::update()
+bool button::update()
 {
   if (notice_variable_) {
     *notice_variable_ = false;
   }
+  return false;
 }
 
 void button::draw(draw_context& cxt) const
@@ -1136,6 +1144,44 @@ vec2 label::calc_layout(calc_layout_context& cxt)
   name_pos_ = local_pos() + vec2(0.f, (float)-name_area.y);
 
   return vec2((float)name_area.w, (float)prop.font_size);
+}
+
+
+
+text_box::text_box(const string& name, string_function_t f, float fixed_width)
+  : component(name), fixed_width_(fixed_width), string_function_(f)
+{
+}
+
+bool text_box::update()
+{
+  string str = string_function_();
+  bool r = (fixed_width_ <= 0.f) && (str_ != str);
+  str_ = str;
+
+  return r;
+}
+
+void text_box::draw(draw_context& cxt) const
+{
+  const auto& prop = cxt.property;
+  cxt.draw_rect(text_pos_, text_size_, prop.frame_color0, color::zero());
+  cxt.draw_font(name_pos_, prop.font_color, name());
+  cxt.draw_font(text_font_pos_, prop.font_color, str_);
+}
+
+vec2 text_box::calc_layout(calc_layout_context& cxt)
+{
+  const auto& prop = cxt.property;
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = local_pos() + vec2(0.f, prop.font_size + prop.mergin);
+  rect text_area = cxt.font_renderer->get_area(prop.font_size, str_);
+  float width = fixed_width_ > 0.f ? fixed_width_ : (float)text_area.w;
+  text_pos_ = local_pos() + vec2(name_area.w + prop.mergin, 0.f);
+  text_size_ = vec2(width + prop.mergin * 2.f, prop.font_size + prop.mergin * 2.f);
+  text_font_pos_ = text_pos_ + vec2(prop.mergin + width - text_area.w, prop.font_size + prop.mergin);
+
+  return text_pos_ + text_size_ - local_pos();
 }
 
 } // end of namespace gui

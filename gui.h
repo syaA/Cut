@@ -84,7 +84,7 @@ public:
   typedef std::stack<ptr_t> event_handler_stack_t;
 
 public:
-  virtual void update() {};
+  virtual bool update() { return false; };
   virtual void draw(draw_context&) const =0;
   virtual vec2 calc_layout(calc_layout_context&) { return local_pos(); }
   virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
@@ -125,7 +125,7 @@ public:
   typedef std::vector<component_ptr_t> array_t;
 
 public:
-  void update() override;
+  bool update() override;
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
   void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
@@ -162,7 +162,7 @@ public:
 public:
   ~system();
 
-  void update();
+  bool update();
   void draw();
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
@@ -311,7 +311,7 @@ public:
   button(const string& name, bool *notice);
   button(const string& name, callback_t);
 
-  void update() override;
+  bool update() override;
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
 
@@ -444,6 +444,51 @@ public:
 private:
   vec2 name_pos_;
 };
+
+
+class text_box : public component, public shared_ptr_creator<text_box>
+{
+public:
+  typedef std::shared_ptr<text_box> ptr_t;
+  typedef std::function<string ()> string_function_t;
+
+public:
+  text_box(const string& name, string_function_t, float fixed_width = 0.f);
+
+  bool update() override;
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+
+private:
+  vec2 name_pos_;
+  vec2 text_pos_;
+  vec2 text_size_;
+  vec2 text_font_pos_;
+
+  float fixed_width_;
+
+  string_function_t string_function_;
+  string str_;
+};
+
+
+
+inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss)
+{}
+template<class OptT, class... Opts>
+void to_s_apply_opt(std::basic_stringstream<char16_t>& ss, OptT&& opt, Opts&&... opts)
+{
+  ss << opt;
+  to_s_apply_opt(ss, opts...);
+}
+template<class T, class... Opts>
+string to_s(const T& v, Opts&&... opts)
+{
+  std::basic_stringstream<char16_t> ss;
+  to_s_apply_opt(ss, opts...);
+  ss << v;
+  return ss.str();
+}
 
 } // end of namepsace gui
 
