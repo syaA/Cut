@@ -186,6 +186,8 @@ int main(int argc, char **argv)
     grp->add_child<gui::radio_button>(u"ラジオボタン１", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
     grp->add_child<gui::radio_button>(u"ラジオボタン２", &mode, 2);
     win->add_child<gui::label>(u"ラベル");
+    win->add_child<gui::text_box>(u"カメラ", [=](){ return gui::to_s(scn->root_camera().eye(),
+                                                                     std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
   }
   {
     auto win = gui_system->add_window(u"test window");

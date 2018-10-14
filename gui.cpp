@@ -262,7 +262,7 @@ system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
   property_.round = 6.f;
-  property_.mergin = 2.f;
+  property_.mergin = 3.f;
 }
 
 system::~system()
@@ -746,7 +746,7 @@ vec2 button::calc_layout(calc_layout_context& cxt)
   area_size_.x = name_area.w + prop.mergin * 2.f;
   area_size_.y = prop.font_size + prop.mergin * 2.f;
   name_pos_.x = local_pos().x + prop.mergin;
-  name_pos_.y = local_pos().y + (prop.font_size + prop.mergin * 2.f - name_area.h) / 2.f - name_area.y;
+  name_pos_.y = local_pos().y + int(prop.font_size + prop.mergin * 2 - name_area.h) / 2 - name_area.y;
   set_size(area_size_);
 
   return area_size_;
@@ -1179,7 +1179,8 @@ vec2 text_box::calc_layout(calc_layout_context& cxt)
   float width = fixed_width_ > 0.f ? fixed_width_ : (float)text_area.w;
   text_pos_ = local_pos() + vec2(name_area.w + prop.mergin, 0.f);
   text_size_ = vec2(width + prop.mergin * 2.f, prop.font_size + prop.mergin * 2.f);
-  text_font_pos_ = text_pos_ + vec2(prop.mergin + width - text_area.w, prop.font_size + prop.mergin);
+  text_font_pos_.x = text_pos_.x + prop.mergin + width - text_area.w;
+  text_font_pos_.y = text_pos_.y + prop.font_size + prop.mergin;
 
   return text_pos_ + text_size_ - local_pos();
 }

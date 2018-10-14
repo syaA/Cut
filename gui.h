@@ -473,8 +473,7 @@ private:
 
 
 
-inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss)
-{}
+inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss) {}
 template<class OptT, class... Opts>
 void to_s_apply_opt(std::basic_stringstream<char16_t>& ss, OptT&& opt, Opts&&... opts)
 {
