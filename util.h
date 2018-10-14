@@ -19,10 +19,11 @@ static const float PI = 3.14159265359f;
 inline float deg2rad(float deg) { return deg / 180.f * PI; }
 inline float raw2def(float rad) { return rad / PI * 180.f; }
 
-inline float clamp(float x, float mn, float mx) { x < mn ? mn : x > mx ? mx : x; }
+template<class T>
+inline T clamp(T x, T mn, T mx) { return x < mn ? mn : x > mx ? mx : x; }
 
 inline bool is_power_of_2(int n) { return (n & (n - 1)) == 0; }
-
+inline float roundup(float f) { return (float)(int)(f + 0.5f); }
 
 template<class T>
 class shared_ptr_creator

@@ -95,10 +95,8 @@ void draw_context::draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2,
 
 void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1)
 {
-  auto x = pos.x;
-  auto y = pos.y;
-  auto w = size.x;
-  auto h = size.y;
+  auto [x, y] = pos;
+  auto [w, h] = size;
   float r = property.round;
   const vertex vertex_array[] = {
     // TL
@@ -508,12 +506,12 @@ drag_control::drag_control()
 {
 }
 
-event_result drag_control::on_mouse_button(component::ptr_t c, const vec2& p, MouseButton button, MouseAction action, ModKey)
+event_result drag_control::on_mouse_button(const vec2& base_pos, const vec2& p, MouseButton button, MouseAction action, ModKey)
 {
   if ((button == MouseButton_Left)) {
     if (action == MouseAction_Press) {
       if (is_in_area(p, area_pos_, area_size_)) {
-        cur_pos_ = c->local_pos();
+        base_pos_ = base_pos;
         start_pos_ = p;
         on_drag_ = true;
         return { true, false };
@@ -528,13 +526,18 @@ event_result drag_control::on_mouse_button(component::ptr_t c, const vec2& p, Mo
   return { false, false };
 }
 
-event_result drag_control::on_cursor_move(component::ptr_t c, const vec2& p)
+std::pair<event_result, vec2> drag_control::on_cursor_move(const vec2& p)
 {
   if (on_drag_) {
     vec2 diff = p - start_pos_;
-    c->set_local_pos(cur_pos_ + diff);
-    return { true, true };
+    return { { true, false }, diff};
   }
+  return { { false, false }, vec2::zero() };
+}
+
+event_result drag_control::on_lost_focus()
+{
+  on_drag_ = false;
   return { false, false };
 }
 
@@ -629,7 +632,7 @@ event_result window::on_mouse_button(const vec2& p, MouseButton button, MouseAct
     }
   }
   // ドラッグ.
-  event_result r = drag_.on_mouse_button(shared_from_this(), p, button, action, mod);
+  event_result r = drag_.on_mouse_button(local_pos(), p, button, action, mod);
 
   return r;
 }
@@ -641,7 +644,13 @@ event_result window::on_cursor_move(const vec2& p)
   } else {
     in_over_ = false;
   }
-  event_result r = drag_.on_cursor_move(shared_from_this(), p);
+
+  auto [r, diff] = drag_.on_cursor_move(p);
+  if (r.accept) {
+    set_local_pos(drag_.base_pos()  + diff);
+    r.recalc_layout = true;
+  }
+
   return r;
 }
 
@@ -1256,7 +1265,7 @@ void text_box::draw(draw_context& cxt) const
 {
   const auto& prop = cxt.property;
   cxt.draw_rect(text_pos_, text_size_, prop.frame_color0, color::zero());
-  cxt.draw_font(name_pos_, prop.font_color, name());
+   cxt.draw_font(name_pos_, prop.font_color, name());
   cxt.draw_font(text_font_pos_, prop.font_color, str_);
 }
 
@@ -1274,5 +1283,77 @@ vec2 text_box::calc_layout(calc_layout_context& cxt)
 
   return text_pos_ + text_size_ - local_pos();
 }
+
+
+const float slider_base::DEFAULT_WIDTH = 120.f;
+
+slider_base::slider_base(const string& name, float width)
+  : component(name), width_(width), in_over_(false)
+{
+}
+
+void slider_base::draw(draw_context& cxt) const
+{
+  const auto& prop = cxt.property;
+  cxt.draw_font(name_pos_, prop.font_color, name());
+  const color& border_color = in_over_ ? prop.semiactive_color : prop.frame_color0;
+  const color& value_color = drag_.in_drag() ? prop.active_color : prop.semiactive_color;
+  cxt.draw_rect(base_pos_, base_size_, border_color, color::zero());
+  if (value_size_.x > 0) {
+    cxt.draw_rect(base_pos_, value_size_, border_color, value_color);
+  }
+  cxt.draw_font(value_font_pos_, prop.font_color, value_str());
+}
+
+vec2 slider_base::calc_layout(calc_layout_context& cxt)
+{
+  const auto& prop = cxt.property;
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = local_pos() + vec2(0.f, prop.font_size + prop.mergin);
+  base_pos_ = local_pos() + vec2(prop.mergin + name_area.w, 0.f);
+  base_size_ = vec2(width_, prop.font_size + prop.mergin * 2.f);
+  value_size_ = vec2(value_width(width_), base_size_.y);
+  rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
+  value_font_pos_ = vec2(roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f), name_pos_.y);
+
+  set_size(base_pos_ + base_size_ - local_pos());
+  drag_.set_area(base_pos_, base_size_);
+
+  return size();
+}
+
+event_result slider_base::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
+{
+  auto r = drag_.on_mouse_button(value_size_, p, button, action, mod);
+  return r;
+}
+
+event_result slider_base::on_cursor_move(const vec2& p)
+{
+  auto [r, diff] = drag_.on_cursor_move(p);
+  if (r.accept) {
+    set_value((drag_.base_pos().x + diff.x) / width_);
+    r.recalc_layout = true;
+  }
+  return r;
+}
+
+event_result slider_base::on_cursor_enter(const vec2& p)
+{
+  in_over_ = true;
+  return { true, false };
+}
+
+event_result slider_base::on_cursor_leave(const vec2&)
+{
+  in_over_ = false;
+  return { true, false };
+}
+
+event_result slider_base::on_lost_focus()
+{
+  return drag_.on_lost_focus();
+}
+
 
 } // end of namespace gui

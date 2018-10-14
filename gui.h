@@ -75,6 +75,23 @@ struct event_result
 };
 
 
+inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss) {}
+template<class OptT, class... Opts>
+void to_s_apply_opt(std::basic_stringstream<char16_t>& ss, OptT&& opt, Opts&&... opts)
+{
+  ss << opt;
+  to_s_apply_opt(ss, opts...);
+}
+template<class T, class... Opts>
+string to_s(const T& v, Opts&&... opts)
+{
+  std::basic_stringstream<char16_t> ss;
+  to_s_apply_opt(ss, opts...);
+  ss << v;
+  return ss.str();
+}
+
+
 struct draw_context;
 struct calc_layout_context;
 
@@ -241,14 +258,18 @@ public:
   drag_control();
   virtual ~drag_control() =default;
 
-  event_result on_mouse_button(component::ptr_t, const vec2&, MouseButton, MouseAction, ModKey);
-  event_result on_cursor_move(component::ptr_t, const vec2&);
+  event_result on_mouse_button(const vec2& base_pos, const vec2&, MouseButton, MouseAction, ModKey);
+  std::pair<event_result, vec2> on_cursor_move(const vec2&);
+  event_result on_lost_focus();
+
+  vec2 base_pos() const { return base_pos_; }
+  bool in_drag() const { return on_drag_; }
 
   void set_area(const vec2& pos, const vec2& size) { area_pos_ = pos; area_size_ = size; }
 
 private:
   vec2 start_pos_;
-  vec2 cur_pos_;
+  vec2 base_pos_;
   vec2 area_pos_;
   vec2 area_size_;
   bool on_drag_;
@@ -485,22 +506,72 @@ private:
 };
 
 
+class slider_base : public component
+{
+public:
+  typedef std::shared_ptr<slider_base> ptr_t;
 
-inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss) {}
-template<class OptT, class... Opts>
-void to_s_apply_opt(std::basic_stringstream<char16_t>& ss, OptT&& opt, Opts&&... opts)
+  static const float DEFAULT_WIDTH;
+
+public:
+  slider_base(const string& name, float width = DEFAULT_WIDTH);
+
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_move(const vec2&) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
+  event_result on_lost_focus();
+
+protected:
+  virtual void set_value(float width) =0;
+  virtual string value_str() const =0;
+  virtual float value_width(float width) const =0;
+
+private:
+  vec2 name_pos_;
+  vec2 base_pos_;
+  vec2 base_size_;
+  vec2 value_size_;
+  vec2 value_font_pos_;
+
+  float width_;
+  bool in_over_;
+  drag_control drag_;
+};
+
+
+template<class T>
+class slider : public slider_base, public shared_ptr_creator<slider<T>>
 {
-  ss << opt;
-  to_s_apply_opt(ss, opts...);
-}
-template<class T, class... Opts>
-string to_s(const T& v, Opts&&... opts)
-{
-  std::basic_stringstream<char16_t> ss;
-  to_s_apply_opt(ss, opts...);
-  ss << v;
-  return ss.str();
-}
+public:
+  std::shared_ptr<slider> ptr_t;
+  typedef T value_t;
+
+public:
+  slider(const string& name, value_t *val, value_t mn, value_t mx, float width = slider_base::DEFAULT_WIDTH)
+    : slider_base(name, width), value_(val), min_value_(mn), max_value_(mx) {}
+
+protected:
+  void set_value(float width) override
+  {
+    *value_ = (value_t)((max_value_ - min_value_) * width + min_value_);
+    *value_ = clamp(*value_, min_value_, max_value_);
+  }
+  string value_str() const override { return to_s(*value_); }
+  float value_width(float width) const override
+  {
+    return (width * (*value_ - min_value_)) / (max_value_ - min_value_);
+  }
+
+private:
+  value_t *value_;
+  value_t min_value_;
+  value_t max_value_;
+};
+
 
 } // end of namepsace gui
 

@@ -203,6 +203,34 @@ int main(int argc, char **argv)
     win->add_child<gui::text_box>(u"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
                                                                      std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
   }
+  {
+    auto win = gui_system->add_window(u"gui param");
+    win->add_child(gui::slider<float>::create(u"color0.r", &gui_system->property().frame_color0.r, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color0.g", &gui_system->property().frame_color0.g, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color0.b", &gui_system->property().frame_color0.b, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color0.a", &gui_system->property().frame_color0.a, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color1.r", &gui_system->property().frame_color1.r, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color1.g", &gui_system->property().frame_color1.g, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color1.b", &gui_system->property().frame_color1.b, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"color1.a", &gui_system->property().frame_color1.a, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active0.r", &gui_system->property().active_color.r, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active0.g", &gui_system->property().active_color.g, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active0.b", &gui_system->property().active_color.b, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active0.a", &gui_system->property().active_color.a, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active1.r", &gui_system->property().semiactive_color.r, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active1.g", &gui_system->property().semiactive_color.g, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active1.b", &gui_system->property().semiactive_color.b, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"active1.a", &gui_system->property().semiactive_color.a, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"font.r", &gui_system->property().font_color.r, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"font.g", &gui_system->property().font_color.g, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"font.b", &gui_system->property().font_color.b, 0.f, 1.f));
+    win->add_child(gui::slider<float>::create(u"font.a", &gui_system->property().font_color.a, 0.f, 1.f));
+
+    win->add_child(gui::slider<int>::create(u"font size", &gui_system->property().font_size, 8, 36));
+    win->add_child(gui::slider<float>::create(u"round", &gui_system->property().round, 0.f, 10.f));
+    win->add_child(gui::slider<float>::create(u"mergin", &gui_system->property().mergin, 0.f, 10.f));
+    win->add_child(gui::slider<float>::create(u"tickness", &gui_system->property().tickness, 0.f, 4.f));
+  }
   gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
