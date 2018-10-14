@@ -68,7 +68,7 @@ void draw_context::draw(int primitive_type,
   gui_shader->set_uniform("screen_size", screen_size);
   gui_shader->set_uniform("color0", c0);
   gui_shader->set_uniform("color1", c1);
-  gui_shader->set_uniform("tickness", clamp(property.tickness / property.mergin, 0.f, 0.5f));
+  gui_shader->set_uniform("tickness", clamp(property.tickness / property.round / 2.f, 0.f, 0.5f));
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -268,12 +268,12 @@ system::system(shader::ptr_t s, font::renderer::ptr_t f)
   property_.font_color = color(0.f, 0.f, 0.f, 1.f);
   property_.font_size = 12;
   property_.frame_color0 = color(0.f, 0.f, 0.f, 1.f);
-  property_.frame_color1 = color(1.f, 1.f, 1.f, .7f);
+  property_.frame_color1 = color(1.f, 1.f, 1.f, .9f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
-  property_.round = 4.f;
+  property_.round = 8.f;
   property_.mergin = 4.f;
-  property_.tickness = 2.f;
+  property_.tickness = 4.f;
 }
 
 system::~system()
