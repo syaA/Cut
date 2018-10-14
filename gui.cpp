@@ -68,7 +68,7 @@ void draw_context::draw(int primitive_type,
   gui_shader->set_uniform("screen_size", screen_size);
   gui_shader->set_uniform("color0", c0);
   gui_shader->set_uniform("color1", c1);
-  gui_shader->set_uniform("tickness", property.tickness / property.mergin);
+  gui_shader->set_uniform("tickness", clamp(property.tickness / property.mergin, 0.f, 0.5f));
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -98,6 +98,7 @@ void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0,
   auto [x, y] = pos;
   auto [w, h] = size;
   float r = property.round;
+  r = std::min(r, std::min(w, h) / 2.f);
   const vertex vertex_array[] = {
     // TL
     { { x,     y     }, { .0f, .0f} },
@@ -1308,15 +1309,15 @@ void slider_base::draw(draw_context& cxt) const
 vec2 slider_base::calc_layout(calc_layout_context& cxt)
 {
   const auto& prop = cxt.property;
-  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(0.f, prop.font_size + prop.mergin);
-  base_pos_ = local_pos() + vec2(prop.mergin + name_area.w, 0.f);
+  base_pos_ = local_pos();
   base_size_ = vec2(width_, prop.font_size + prop.mergin * 2.f);
   value_size_ = vec2(value_width(width_), base_size_.y);
   rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
   value_font_pos_ = vec2(roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f), name_pos_.y);
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+  name_pos_ = base_pos_ + vec2(base_size_.x + prop.mergin, prop.font_size + prop.mergin);
 
-  set_size(base_pos_ + base_size_ - local_pos());
+  set_size(name_pos_ + vec2((float)name_area.w, prop.mergin) - local_pos());
   drag_.set_area(base_pos_, base_size_);
 
   return size();
