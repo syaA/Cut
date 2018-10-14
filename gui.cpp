@@ -52,7 +52,8 @@ vec2 place_compoent_array(vec2 pos, calc_layout_context& cxt, std::vector<compon
 
 
 
-void draw_context::draw(const vertex* vertex_array, int vertex_cnt,
+void draw_context::draw(int primitive_type,
+                        const vertex* vertex_array, int vertex_cnt,
                         const uint32_t *index_array, int index_cnt,
                         const color& c0, const color& c1)
 {
@@ -75,7 +76,7 @@ void draw_context::draw(const vertex* vertex_array, int vertex_cnt,
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-  glDrawElements(GL_TRIANGLES,
+  glDrawElements(primitive_type,
                  index_cnt,
                  GL_UNSIGNED_INT,
                  index_array);
@@ -91,7 +92,7 @@ void draw_context::draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2,
   static const uint32_t index_array[] = {
     0, 1, 2
   };
-  draw(vertex_array, countof(vertex_array), index_array, countof(index_array), c, c);
+  draw(GL_TRIANGLES, vertex_array, countof(vertex_array), index_array, countof(index_array), c, c);
 }
 
 void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1)
@@ -128,7 +129,19 @@ void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0,
     1, 8, 3, 3, 8, 10, 3, 10, 5, 5, 10, 12, 5, 12, 7, 7, 12, 14,
     8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15
   };
-  draw(vertex_array, countof(vertex_array), index_array, countof(index_array), c0, c1);
+  draw(GL_TRIANGLES, vertex_array, countof(vertex_array), index_array, countof(index_array), c0, c1);
+}
+
+void draw_context::draw_line(const vec2& a, const vec2& b, const color& c)
+{
+  const vertex vertex_array[] = {
+    { a, { .5f, .5f } },
+    { b, { .5f, .5f } },
+  };
+  static const uint32_t index_array[] = {
+    0, 1,
+  };
+  draw(GL_LINES, vertex_array, countof(vertex_array), index_array, countof(index_array), c, c);
 }
 
 void draw_context::draw_font(const vec2& pos, const color& c, const string& str)
@@ -401,6 +414,9 @@ bool system::on_cursor_move_root(vec2 p)
   if (auto c = focus()) {
     r_move = c->on_cursor_move(p);
   }
+  for (auto w : child_array()) {
+    w->on_cursor_move(p);
+  }
 
   if (r_enter.recalc_layout || r_leave.recalc_layout || r_move.recalc_layout) {
     recalc_layout();
@@ -525,50 +541,124 @@ event_result drag_control::on_cursor_move(component::ptr_t c, const vec2& p)
 
 
 
-window::window(const string& name)
-  : component_set(name)
+window::window(const string& name, bool opened )
+  : component_set(name), in_open_(opened), in_press_(false), in_over_(false)
 {
 }
 
 void window::draw(draw_context& cxt) const
 {
-  cxt.draw_rect(local_pos(), size(), cxt.property.frame_color0, cxt.property.frame_color1);
-  cxt.draw_font(name_pos_, cxt.property.font_color, name());
+  const system_property& prop = cxt.property;
+  cxt.draw_rect(local_pos(), size(), prop.frame_color0, prop.frame_color1);
+  cxt.draw_font(name_pos_, prop.font_color, name());
 
-  component_set::draw(cxt);
+  if (in_over_) {
+    cxt.draw_rect(local_pos(), tri_size_, prop.active_color, prop.semiactive_color);
+  }
+  const color& cc =  in_press_ ? prop.active_color : prop.frame_color0;
+  auto [x, y] = local_pos();
+  if (in_open_) {
+    cxt.draw_triangle(vec2(x + prop.mergin,               y + tri_size_.y * 3.f / 8.f),
+                      vec2(x + tri_size_.x * .5f,         y + tri_size_.y * 5.f / 8.f),
+                      vec2(x + tri_size_.x - prop.mergin, y + tri_size_.y * 3.f / 8.f),
+                      cc);
+    cxt.draw_line(line_l_, line_r_, prop.frame_color0);
+    component_set::draw(cxt);
+  } else {
+    cxt.draw_triangle(vec2(x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y / 4.f),
+                      vec2(x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y * 3.f / 4.f),
+                      vec2(x + tri_size_.x * 3.f / 4.f,         y + tri_size_.y / 2.f),
+                      cc);
+  }
 }
 
 vec2 window::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
+  tri_size_ = vec2(prop.font_size / 2.f + prop.mergin * 3.f, prop.font_size + prop.mergin * 2.f);
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
   float width = name_area.w + prop.mergin * 2.f;
   auto pos = local_pos();
-  name_pos_ = pos + vec2(prop.mergin, prop.mergin - name_area.y);
-  pos += vec2(prop.mergin, prop.mergin - name_area.y + prop.mergin);
+  name_pos_ = pos + vec2(prop.mergin + tri_size_.x, prop.font_size + prop.mergin);
+  pos += vec2(prop.mergin, prop.mergin * 2.f + prop.font_size);
+  if (in_open_) {
+    pos.y += prop.mergin * 2.f;
+  }
   vec2 size = place_compoent_array(pos, cxt, child_array());
+  if (!in_open_) {
+    size.y = 0.f;
+  }
   size.x = std::max(width, size.x + prop.mergin * 2.f);
   size.y = (pos.y + size.y) - local_pos().y;
   set_size(size);
+
+  line_l_ = vec2(pos.x, local_pos().y + tri_size_.y + prop.mergin);
+  line_r_ = line_l_ + vec2(size.x - prop.mergin * 2.f, 0.f);
 
   drag_.set_area(local_pos(), size);
 
   return size;
 }
 
+void window::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+{
+  component::make_event_handler_stack(p, stk);
+  if (in_open_) {
+    for (auto c : child_array()) {
+      c->make_event_handler_stack(p, stk);
+    }
+  }
+}
+
 event_result window::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
 {
-  event_result r = drag_.on_mouse_button(shared_from_this(), p, button, action, mod);
-  if (!r.accept) {
-    r = component_set::on_mouse_button(p, button, action, mod);
+  // ▼
+  if (button == MouseButton_Left) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, local_pos(), tri_size_)) {
+        in_press_ = true;
+        return { true, false };
+      }
+    } else {
+      if (is_in_area(p, local_pos(), tri_size_)) {
+        if (in_press_) {
+          in_press_ = false;
+          in_open_ = !in_open_;
+          return { true, true };
+        }
+      }
+    }
   }
+  // ドラッグ.
+  event_result r = drag_.on_mouse_button(shared_from_this(), p, button, action, mod);
+
   return r;
 }
 
 event_result window::on_cursor_move(const vec2& p)
 {
+  if (is_in_area(p, local_pos(), tri_size_)) {
+    in_over_ = true;
+  } else {
+    in_over_ = false;
+  }
   event_result r = drag_.on_cursor_move(shared_from_this(), p);
   return r;
+}
+
+event_result window::on_cursor_enter(const vec2& p)
+{
+  if (is_in_area(p, local_pos(), tri_size_)) {
+    in_over_ = true;
+    return { true, false };
+  }
+  return { false, false };
+}
+
+event_result window::on_cursor_leave(const vec2& p)
+{
+  in_over_ = false;
+  return { true, false };
 }
 
 
@@ -616,7 +706,8 @@ void group::draw(draw_context& cxt) const
       0, 1, 4, 4, 1, 5, 4, 5, 6, 6, 5, 7,
       2, 8, 3, 3, 8, 10, 5, 12, 7, 7, 12, 14,
       8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15 };
-    cxt.draw(vertex_array, countof(vertex_array), index_array, countof(index_array), cxt.property.frame_color0, inside);
+    cxt.draw(GL_TRIANGLES, vertex_array, countof(vertex_array),
+             index_array, countof(index_array), cxt.property.frame_color0, inside);
   }
   if (in_over_) {
     cxt.draw_rect(local_pos(), tri_size_, prop.active_color, prop.semiactive_color);
@@ -1071,7 +1162,7 @@ void radio_button::draw(draw_context& cxt) const
   static const uint32_t index_array[] = {
     0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1
   };
-  cxt.draw(vertex_array, countof(vertex_array), index_array, countof(index_array), border, inside);
+  cxt.draw(GL_TRIANGLES, vertex_array, countof(vertex_array), index_array, countof(index_array), border, inside);
 }
 
 vec2 radio_button::calc_layout(calc_layout_context& cxt)

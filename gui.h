@@ -216,9 +216,13 @@ struct draw_context
   const system_property& property;
   const component::ptr_t focused;
 
-  void draw(const vertex*, int vertex_cnt, const uint32_t *index_array, int index_cnt, const color& c0, const color& c1);
+  void draw(int primitive_type,
+            const vertex*, int vertex_cnt,
+            const uint32_t *index_array, int index_cnt,
+            const color& c0, const color& c1);
   void draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c);
   void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
+  void draw_line(const vec2& a, const vec2& b, const color& c);
   void draw_font(const vec2& pos, const color& c, const string& str);
 
   bool is_focused(component::ptr_t p) { return focused == p; }
@@ -258,17 +262,27 @@ public:
   typedef std::shared_ptr<window> ptr_t;
 
 public:
-  window(const string& name);
+  window(const string& name, bool opened = true);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
+  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
   event_result on_cursor_move(const vec2&) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
 
 private:
   vec2 name_pos_;
+  vec2 tri_size_;
+  vec2 line_l_;
+  vec2 line_r_;
   drag_control drag_;
+
+  bool in_open_;
+  bool in_press_;
+  bool in_over_;
 };
 
 
