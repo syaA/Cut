@@ -31,6 +31,7 @@ struct system_property
   color semiactive_color;
 
   float round;
+  float tickness;
   float mergin;
 };
 
@@ -189,13 +190,12 @@ public:
   system_property& property() { return property_; }
 
 protected:
-  system(shader::ptr_t, texture::ptr_t, font::renderer::ptr_t);
+  system(shader::ptr_t, font::renderer::ptr_t);
 
   void recalc_layout();
 
 private:
   shader::ptr_t shader_;
-  texture::ptr_t texture_;
   font::renderer::ptr_t font_renderer_;
   GLuint vertex_buffer_;
   vec2 screen_size_;
@@ -209,7 +209,6 @@ private:
 struct draw_context
 {
   const shader::ptr_t gui_shader;
-  const texture::ptr_t gui_tex;
   const GLuint vertex_buffer;
   const font::renderer::ptr_t font_renderer;
   const vec2 screen_size;

@@ -68,11 +68,7 @@ void draw_context::draw(int primitive_type,
   gui_shader->set_uniform("screen_size", screen_size);
   gui_shader->set_uniform("color0", c0);
   gui_shader->set_uniform("color1", c1);
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, gui_tex->texture_globj());
-  glBindSampler(0, gui_tex->sampler_globj());
-  gui_shader->set_uniform("gui_sampler", 0);
+  gui_shader->set_uniform("tickness", property.tickness / property.mergin);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -82,17 +78,19 @@ void draw_context::draw(int primitive_type,
                  index_array);
 }
 
-void draw_context::draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c)
+void draw_context::draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& col)
 {
+  vec2 c = (p0 + p1 + p2) / 3.f;
   const vertex vertex_array[] = {
-    { { p0.x, p0.y }, { 1.f, 1.f} },
-    { { p1.x, p1.y }, { 1.f, 1.f} },
-    { { p2.x, p2.y }, { 1.f, 1.f} },
+    { c,  { 0.f, 0.f} },
+    { p0, { 1.f, 1.f} },
+    { p1, { 1.f, 1.f} },
+    { p2, { 1.f, 1.f} },
   };
   static const uint32_t index_array[] = {
-    0, 1, 2
+    0, 1, 2, 0, 2, 3, 0, 3, 1
   };
-  draw(GL_TRIANGLES, vertex_array, countof(vertex_array), index_array, countof(index_array), c, c);
+  draw(GL_TRIANGLES, vertex_array, countof(vertex_array), index_array, countof(index_array), col, col);
 }
 
 void draw_context::draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1)
@@ -260,9 +258,9 @@ void component_set::clear_child()
 
 
 
-system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
+system::system(shader::ptr_t s, font::renderer::ptr_t f)
   : component_set(u"root"),
-    shader_(s), texture_(t), font_renderer_(f),
+    shader_(s), font_renderer_(f),
     prev_cursor_pos_(0.f)
 {
   glGenBuffers(1, &vertex_buffer_);
@@ -274,8 +272,9 @@ system::system(shader::ptr_t s, texture::ptr_t t, font::renderer::ptr_t f)
   property_.frame_color1 = color(1.f, 1.f, 1.f, .7f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
-  property_.round = 6.f;
-  property_.mergin = 3.f;
+  property_.round = 4.f;
+  property_.mergin = 4.f;
+  property_.tickness = 2.f;
 }
 
 system::~system()
@@ -299,7 +298,7 @@ void system::draw()
   font_renderer_->set_screen_size((int)screen_size_.x, (int)screen_size_.y);
 
   draw_context cxt = {
-    shader_, texture_, vertex_buffer_, font_renderer_, screen_size_, property_, focused_.lock() };
+    shader_, vertex_buffer_, font_renderer_, screen_size_, property_, focused_.lock() };
 
   component_set::draw(cxt);
 
@@ -939,10 +938,10 @@ vec2 combo_box::calc_layout(calc_layout_context& cxt)
   vec2 size = tri_pos_ + tri_size_ - local_pos();
 
   if (in_open_) {
-    item_height_ = prop.font_size + prop.mergin;
+    item_height_ = prop.font_size + prop.mergin * 2.f;
     item_list_pos_ = item_pos_ + vec2(0.f, size.y - 1.f);
     item_list_size_ = vec2(item_size_.x, item_height_ * item_array_.size());;
-    item_list_font_pos_ = item_list_pos_ + vec2(prop.mergin, (float)prop.font_size);
+    item_list_font_pos_ = item_list_pos_ + vec2(prop.mergin, prop.font_size + prop.mergin);
     set_size({size.x, size.y + item_list_size_.y});
   } else {
     set_size(size);

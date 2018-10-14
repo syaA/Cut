@@ -166,9 +166,7 @@ int main(int argc, char **argv)
 
   auto gui_shader = std::make_shared<shader>();
   assert(gui_shader->compile_from_source_file("assets/shader/gui.vsh", "assets/shader/gui.fsh"));
-  auto gui_tex = texture::make();
-  texture::load_from_file(gui_tex, "assets/ui/frame.png");
-  auto gui_system = gui::system::create(gui_shader, gui_tex, font_renderer);
+  auto gui_system = gui::system::create(gui_shader, font_renderer);
   world()->add("gui", gui_system);
   bool visible_mouse_point = false;
   int morph = 0;
