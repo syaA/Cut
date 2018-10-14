@@ -682,42 +682,6 @@ void group::draw(draw_context& cxt) const
 {
   const system_property& prop = cxt.property;
   cxt.draw_font(name_pos_, prop.font_color, name());
-  {
-    // 枠線.
-    const color inside = { 0.f, 0.f, 0.f, 0.f };
-    auto [x, y] = line_pos_;
-    auto [w, h] = line_size_;
-    auto [l, t] = line_lt_;
-    float r = prop.round;
-    const vertex vertex_array[] = {
-      // TL
-      { { l,     y     }, { .5f, .0f} },
-      { { l,     y + r }, { .5f, .5f} },
-      { { x,     t     }, { .0f, .5f} },
-      { { x + r, t     }, { .5f, .5f} },
-      // TR
-      { { x + w - r, y     }, { .5f, .0f} },
-      { { x + w - r, y + r }, { .5f, .5f} },
-      { { x + w,     y     }, { .0f, .0f} },
-      { { x + w,     y + r }, { .0f, .5f} },
-      // BL
-      { { x,     y + h - r }, { .0f, .5f} },
-      { { x,     y + h     }, { .0f, .0f} },
-      { { x + r, y + h - r }, { .5f, .5f} },
-      { { x + r, y + h     }, { .5f, .0f} },
-      // BR
-      { { x + w - r, y + h - r }, { .5f, .5f} },
-      { { x + w - r, y + h     }, { .5f, .0f} },
-      { { x + w,     y + h - r }, { .0f, .5f} },
-      { { x + w,     y + h     }, { .0f, .0f} },
-    };
-    static const uint32_t index_array[] = {
-      0, 1, 4, 4, 1, 5, 4, 5, 6, 6, 5, 7,
-      2, 8, 3, 3, 8, 10, 5, 12, 7, 7, 12, 14,
-      8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15 };
-    cxt.draw(GL_TRIANGLES, vertex_array, countof(vertex_array),
-             index_array, countof(index_array), cxt.property.frame_color0, inside);
-  }
   if (in_over_) {
     cxt.draw_rect(local_pos(), tri_size_, prop.active_color, prop.semiactive_color);
   }
@@ -729,12 +693,52 @@ void group::draw(draw_context& cxt) const
                       vec2(x + tri_size_.x,       y + tri_size_.y * 3.f / 8.f),
                       cc);
     component_set::draw(cxt);
+    draw_frame(cxt);
   } else {
     cxt.draw_triangle(vec2(x + tri_size_.x / 4.f,       y + tri_size_.y / 4.f),
                       vec2(x + tri_size_.x / 4.f,       y + tri_size_.y * 3.f / 4.f),
                         vec2(x + tri_size_.x * 3.f / 4.f, y + tri_size_.y / 2.f),
                       cc);
   }
+}
+
+void group::draw_frame(draw_context& cxt) const
+{
+  // 枠線
+  const system_property& prop = cxt.property;
+  const color inside = { 0.f, 0.f, 0.f, 0.f };
+  auto [x, y] = line_pos_;
+  auto [w, h] = line_size_;
+  auto [l, t] = line_lt_;
+  float r = prop.round;
+  const vertex vertex_array[] = {
+    // TL
+    { { l,     y     }, { .5f, .0f} },
+    { { l,     y + r }, { .5f, .5f} },
+    { { x,     t     }, { .0f, .5f} },
+    { { x + r, t     }, { .5f, .5f} },
+    // TR
+    { { x + w - r, y     }, { .5f, .0f} },
+    { { x + w - r, y + r }, { .5f, .5f} },
+    { { x + w,     y     }, { .0f, .0f} },
+    { { x + w,     y + r }, { .0f, .5f} },
+    // BL
+    { { x,     y + h - r }, { .0f, .5f} },
+    { { x,     y + h     }, { .0f, .0f} },
+    { { x + r, y + h - r }, { .5f, .5f} },
+    { { x + r, y + h     }, { .5f, .0f} },
+    // BR
+    { { x + w - r, y + h - r }, { .5f, .5f} },
+    { { x + w - r, y + h     }, { .5f, .0f} },
+    { { x + w,     y + h - r }, { .0f, .5f} },
+    { { x + w,     y + h     }, { .0f, .0f} },
+  };
+  static const uint32_t index_array[] = {
+    0, 1, 4, 4, 1, 5, 4, 5, 6, 6, 5, 7,
+    2, 8, 3, 3, 8, 10, 5, 12, 7, 7, 12, 14,
+    8, 9, 10, 10, 9, 11, 10, 11, 12, 12, 11, 13, 12, 13, 14, 14, 13, 15 };
+  cxt.draw(GL_TRIANGLES, vertex_array, countof(vertex_array),
+           index_array, countof(index_array), cxt.property.frame_color0, inside);
 }
 
 vec2 group::calc_layout(calc_layout_context& cxt)
@@ -748,15 +752,16 @@ vec2 group::calc_layout(calc_layout_context& cxt)
   vec2 child_size(0.f);
   child_size = place_compoent_array(pos, cxt, child_array());
   child_size.x = std::max(child_size.x, tri_size_.x + name_area.w + prop.mergin);
-  if (!in_open_) {
-    child_size.y = 0.f;
-  }
   line_size_ = child_size + vec2(prop.mergin) + (pos - line_pos_);
   line_lt_.x = local_pos().x + tri_size_.x + name_area.w + prop.mergin;
   line_lt_.y = local_pos().y + tri_size_.y;
   set_size(tri_size_);
 
-  return line_pos_ + line_size_ + vec2(prop.mergin) - local_pos();
+  if (in_open_) {
+    return line_pos_ + line_size_ + vec2(prop.mergin) - local_pos();
+  } else {
+    return name_pos_ + vec2((float)name_area.w, (float)prop.mergin) - local_pos();
+  }
 }
 
 void group::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
@@ -1313,7 +1318,8 @@ vec2 slider_base::calc_layout(calc_layout_context& cxt)
   base_size_ = vec2(width_, prop.font_size + prop.mergin * 2.f);
   value_size_ = vec2(value_width(width_), base_size_.y);
   rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
-  value_font_pos_ = vec2(roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f), name_pos_.y);
+  value_font_pos_ = vec2(roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f),
+                         base_pos_.y + prop.font_size + prop.mergin);
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
   name_pos_ = base_pos_ + vec2(base_size_.x + prop.mergin, prop.font_size + prop.mergin);
 

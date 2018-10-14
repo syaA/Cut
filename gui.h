@@ -322,6 +322,9 @@ public:
   event_result on_cursor_enter(const vec2&) override;
   event_result on_cursor_leave(const vec2&) override;
 
+protected:
+  void draw_frame(draw_context&) const;
+
 private:
   vec2 name_pos_;
   vec2 tri_size_;
