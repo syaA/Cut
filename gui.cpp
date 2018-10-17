@@ -153,11 +153,13 @@ component::component(const string& name)
 {
 }
 
-void component::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+bool component::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
   if (is_in_area(p, local_pos(), size())) {
     stk.push(shared_from_this());
+    return true;
   }
+  return false;
 }
 
 event_result component::on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey)
@@ -233,12 +235,13 @@ vec2 component_set::calc_layout(calc_layout_context& cxt)
   return size();
 }
 
-void component_set::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+bool component_set::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
-  component::make_event_handler_stack(p, stk);
+  bool ret = component::make_event_handler_stack(p, stk);
   for (auto c : child_array()) {
-    c->make_event_handler_stack(p, stk);
+    ret = c->make_event_handler_stack(p, stk) || ret;
   }
+  return ret;
 }
 
 void component_set::add_child(component_ptr_t p) {
@@ -322,11 +325,16 @@ void system::recalc_layout()
   }
 }
 
-void system::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+bool system::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
-  for (auto c : child_array()) {
-    c->make_event_handler_stack(p, stk);
+  bool ret = false;
+  for (auto c : reverse(child_array())) {
+    ret = c->make_event_handler_stack(p, stk);
+    if (ret) {
+      break;
+    }
   }
+  return ret;
 }
 
 std::shared_ptr<window> system::add_window(const string& name)
@@ -354,10 +362,11 @@ bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action
 {
   p = clamp(p, vec2(0.f), screen_size_);
   // ウィンドウフォーカス.
-  for (auto w : child_array()) {
+  for (auto w : reverse(child_array())) {
     if (is_in_area(p, w->local_pos(), w->size())) {
       remove_child(w);
       add_child(w);	// 末尾へ回す.
+      break;
     }
   }
 
@@ -391,21 +400,18 @@ bool system::on_cursor_move_root(vec2 p)
 
   // enter
   event_result r_enter;
-  while (!cur_stk.empty()) {
-    auto c = cur_stk.top();
-    if (!is_in_area(prev_cursor_pos_, c->local_pos(), c->size())) {
+  for (auto c : cur_stk) {
+    if (std::find(begin(pre_stk), end(pre_stk), c) == end(pre_stk)) {
       r_enter = c->on_cursor_enter(p);
     }
-    cur_stk.pop();
   }
   // leave
   event_result r_leave;
-  while (!pre_stk.empty()) {
+  for (auto c : pre_stk) {
     auto c = pre_stk.top();
-    if (!is_in_area(p, c->local_pos(), c->size())) {
+    if (std::find(begin(cur_stk), end(cur_stk), c) == end(cur_stk)) {
       r_leave = c->on_cursor_leave(p);
     }
-    pre_stk.pop();
   }
   // move
   event_result r_move;
@@ -603,14 +609,15 @@ vec2 window::calc_layout(calc_layout_context& cxt)
   return size;
 }
 
-void window::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+bool window::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
-  component::make_event_handler_stack(p, stk);
+  bool ret = component::make_event_handler_stack(p, stk);
   if (in_open_) {
     for (auto c : child_array()) {
-      c->make_event_handler_stack(p, stk);
+      ret = c->make_event_handler_stack(p, stk) || ret;
     }
   }
+  return ret;
 }
 
 event_result window::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey mod)
@@ -764,14 +771,15 @@ vec2 group::calc_layout(calc_layout_context& cxt)
   }
 }
 
-void group::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+bool group::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
-  component::make_event_handler_stack(p, stk);
+  bool ret = component::make_event_handler_stack(p, stk);
   if (in_open_) {
     for (auto c : child_array()) {
-      c->make_event_handler_stack(p, stk);
+      ret = c->make_event_handler_stack(p, stk) || ret;
     }
   }
+  return ret;
 }
 
 event_result group::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)

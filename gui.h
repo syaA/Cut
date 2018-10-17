@@ -105,7 +105,7 @@ public:
   virtual bool update() { return false; };
   virtual void draw(draw_context&) const =0;
   virtual vec2 calc_layout(calc_layout_context&) { return local_pos(); }
-  virtual void make_event_handler_stack(const vec2& p, event_handler_stack_t&);
+  virtual bool make_event_handler_stack(const vec2& p, event_handler_stack_t&);
 
   virtual event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey);
   virtual event_result on_cursor_move(const vec2&);
@@ -146,7 +146,7 @@ public:
   bool update() override;
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
-  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+  bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   template<class T, class... Args>
   typename T::ptr_t add_child(Args... args)
@@ -185,7 +185,7 @@ public:
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
   void calc_layout();
-  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+  bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   std::shared_ptr<window> add_window(const string& name);
   std::shared_ptr<window> add_window(std::shared_ptr<window>);
@@ -286,7 +286,7 @@ public:
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
-  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+  bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
   event_result on_cursor_move(const vec2&) override;
@@ -316,7 +316,7 @@ public:
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
-  void make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+  bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
   event_result on_cursor_enter(const vec2&) override;

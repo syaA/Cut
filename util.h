@@ -45,3 +45,58 @@ public:
     return std::make_shared<holder_t>(std::forward<Args>(args)...);
   }
 };
+
+template<class ContT>
+class reverse_adaptor
+{
+public:
+  typedef typename ContT::reverse_iterator iterator;
+  typedef typename ContT::const_reverse_iterator const_iterator;
+
+public:
+  reverse_adaptor(ContT& cont)
+    : cont_(cont) {}
+
+  iterator begin() { return cont_.rbegin(); }
+  iterator end() { return cont_.rend(); }
+  const_iterator begin() const { return cont_.rbegin(); }
+  const_iterator end() const { return cont_.rend(); }
+
+private:
+  ContT cont_;
+};
+
+template<class ContT>
+reverse_adaptor<ContT> reverse(ContT& cont)
+{
+  return reverse_adaptor<ContT>(cont);
+}
+
+template<class T, class ContT>
+class stack_for_range : public std::stack<T, ContT>
+{
+  using std::stack<T, ContT>::c;
+public:
+  auto begin() { return c.begin(); }
+  auto end() { return c.end(); }
+  auto begin() const { return c.begin(); }
+  auto end() const { return c.end(); }
+  auto rbegin() { return c.rbegin(); }
+  auto rend() { return c.rend(); }
+  auto rbegin() const { return c.rbegin(); }
+  auto rend() const { return c.rend(); }
+};
+
+
+namespace std {
+template<class T, class ContT>
+auto begin(std::stack<T, ContT>& stk)
+{
+  return static_cast<stack_for_range<T, ContT>&>(stk).begin();
+}
+template<class T, class ContT>
+auto end(std::stack<T, ContT>& stk)
+{
+  return static_cast<stack_for_range<T, ContT>&>(stk).end();
+}
+} // end of namespacce std
