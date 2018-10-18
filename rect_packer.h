@@ -1,13 +1,7 @@
 ﻿
 #pragma once
 
-
-struct rect
-{
-  int x, y, w, h;
-
-  bool empty() { return (w <= 0) || (h <= 0); }
-};
+#include "rect.h"
 
 class rect_packer
 {

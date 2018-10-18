@@ -56,7 +56,7 @@ rect texture_atlas::register_char(FT_GlyphSlot glyph)
   if ( height == 0) {
     height = 1;
   }
-  rect r = packer_.add({0, 0, width, height});
+  rect r = packer_.add({0.f, 0.f, (float)width, (float)height});
   if (r.empty()) {
     return r;
   }
@@ -70,7 +70,7 @@ rect texture_atlas::register_char(FT_GlyphSlot glyph)
   glGetIntegerv(GL_UNPACK_ALIGNMENT, &pixel_store);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glBindTexture(GL_TEXTURE_2D, tex_->texture_globj());
-  glTexSubImage2D(GL_TEXTURE_2D, 0, r.x, r.y, r.w, r.h, GL_RED, GL_UNSIGNED_BYTE, buf);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)r.x, (GLint)r.y, (GLsizei)r.w, (GLsizei)r.h, GL_RED, GL_UNSIGNED_BYTE, buf);
   glPixelStorei(GL_UNPACK_ALIGNMENT, pixel_store);
 
   return r;
@@ -191,7 +191,7 @@ rect renderer::get_area(const ivec2& size, std::u16string_view str, vec2 *end)
     *end = lr;
   }
 
-  return { (int)lr.x, (int)lr.y, (int)(rb.x - lr.x), (int)(rb.y - lr.y)};
+  return { lr.x, lr.y, rb.x - lr.x, rb.y - lr.y};
 }
 
 void renderer::prepare_font(const ivec2& size, std::u16string_view str)

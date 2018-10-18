@@ -4,46 +4,11 @@
 #include "rect_packer.h"
 
 
-namespace {
-
-// a が b に完全に含まれるか？
-bool is_include_rect(const rect& a, const rect& b)
-{
-  return
-    (a.x >= b.x) &&
-    ((a.x + a.w) <= (b.x + b.w)) &&
-    (a.y >= b.y) &&
-    ((a.y + a.h) <= (b.y + b.h));
-}
-
-// 矩形の交差を得る
-rect intersect_rect(const rect& a, const rect& b)
-{
-  rect r{0, 0, 0, 0};
-  if (((a.x + a.w) < b.x) ||
-      (a.x > (b.x + b.w)) ||
-      ((a.y + a.h) < b.y) ||
-      (a.y > (b.y + b.h))) {
-    // 交差無し
-    return r;
-  }
-
-  r.x = (a.x < b.x) ? b.x : a.x;
-  r.y = (a.y < b.y) ? b.y : a.y;
-  r.w = (((a.x + a.w) > (b.x + b.w)) ? (b.x + b.w) : (a.x + a.w)) - r.x;
-  r.h = (((a.y + a.h) > (b.y + b.h)) ? (b.y + b.h) : (a.y + a.h)) - r.y;
-
-  return r;
-}
-
-} // end of anonymus namespace
-
-
 rect_packer::rect_packer(int w, int h)
   : width_(w), height_(h)
 {
   // フルサイズ空き矩形.
-  free_rect_array_.push_back({0, 0, w, h});
+  free_rect_array_.push_back({0, 0, (float)w, (float)h});
 }
 
 rect rect_packer::add(rect r)
@@ -65,11 +30,11 @@ rect rect_packer::get_fit_rect(rect r)
 {
   // free_array から入れる場所を探す.
   // 幅と高さのどちらかだけでもピッタリのが良いことにする.
-  int most_fit = std::numeric_limits<int>::max();
+  float most_fit = std::numeric_limits<float>::max();
   for (const auto& free : free_rect_array_) {
     if ((free.w >= r.w) && (free.h >= r.h)) {
-      int f = std::min(free.w - r.w, free.h - r.h);
-      if (f == 0) {
+      float f = std::min(free.w - r.w, free.h - r.h);
+      if (f <= 0.f) {
         // 終わり.
         r.x = free.x;
         r.y = free.y;
@@ -141,6 +106,6 @@ void rect_packer::clear()
 {
   rect_array_.clear();
   free_rect_array_.clear();
-  free_rect_array_.push_back({0, 0, width_, height_});
+  free_rect_array_.push_back({0, 0, (float)width_, (float)height_});
 
 }
