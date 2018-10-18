@@ -226,10 +226,14 @@ int main(int argc, char **argv)
     win->add_child(gui::slider<float>::create(u"font.b", &gui_system->property().font_color.b, 0.f, 1.f));
     win->add_child(gui::slider<float>::create(u"font.a", &gui_system->property().font_color.a, 0.f, 1.f));
 
-    win->add_child(gui::slider<int>::create(u"font size", &gui_system->property().font_size, 8, 36));
-    win->add_child(gui::slider<float>::create(u"round", &gui_system->property().round, 0.f, 20.f));
-    win->add_child(gui::slider<float>::create(u"mergin", &gui_system->property().mergin, 0.f, 10.f));
-    win->add_child(gui::slider<float>::create(u"tickness", &gui_system->property().tickness, 0.f, 10.f));
+    win->add_child(gui::numeric_up_down<int>::create(
+      u"font size", &gui_system->property().font_size, 8, 36, 1, [=](){ gui_system->recalc_layout(); }));
+    win->add_child(gui::numeric_up_down<float>::create(
+      u"round", &gui_system->property().round, 0.f, 20.f, 1.f, [=](){ gui_system->recalc_layout(); }));
+    win->add_child(gui::numeric_up_down<float>::create(
+      u"mergin", &gui_system->property().mergin, 0.f, 10.f, 1.f, [=](){ gui_system->recalc_layout(); }));
+    win->add_child(gui::numeric_up_down<float>::create(
+      u"tickness", &gui_system->property().tickness, 0.f, 10.f, 1.f, [=](){ gui_system->recalc_layout(); }));
   }
   gui_system->calc_layout();
   

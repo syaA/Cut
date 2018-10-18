@@ -156,7 +156,7 @@ component::component(const string& name)
 bool component::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
 {
   if (is_in_area(p, local_pos(), size())) {
-    stk.push(shared_from_this());
+    stk.push({ shared_from_this(), 0 });
     return true;
   }
   return false;
@@ -374,9 +374,9 @@ bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action
   make_event_handler_stack(p, stk);
   event_result r;
   while (!stk.empty()) {
-    r = stk.top()->on_mouse_button(p, button, action, mod);
+    r = stk.top().first->on_mouse_button(p, button, action, mod);
     if (r.accept) {
-      set_focus(stk.top());
+      set_focus(stk.top().first);
       break;
     }
     stk.pop();
@@ -400,16 +400,15 @@ bool system::on_cursor_move_root(vec2 p)
 
   // enter
   event_result r_enter;
-  for (auto c : cur_stk) {
-    if (std::find(begin(pre_stk), end(pre_stk), c) == end(pre_stk)) {
+  for (auto [c, index] : cur_stk) {
+    if (std::find(begin(pre_stk), end(pre_stk), std::make_pair(c, index)) == end(pre_stk)) {
       r_enter = c->on_cursor_enter(p);
     }
   }
   // leave
   event_result r_leave;
-  for (auto c : pre_stk) {
-    auto c = pre_stk.top();
-    if (std::find(begin(cur_stk), end(cur_stk), c) == end(cur_stk)) {
+  for (auto [c, index] : pre_stk) {
+    if (std::find(begin(cur_stk), end(cur_stk), std::make_pair(c, index)) == end(cur_stk)) {
       r_leave = c->on_cursor_leave(p);
     }
   }
@@ -1368,6 +1367,128 @@ event_result slider_base::on_cursor_leave(const vec2&)
 event_result slider_base::on_lost_focus()
 {
   return drag_.on_lost_focus();
+}
+
+
+const float numeric_up_down_base::DEFAULT_WIDTH = 120.f;
+
+numeric_up_down_base::numeric_up_down_base(const string& name, float width)
+  : component(name), width_(width),
+    in_over_up_(false), in_over_down_(false), in_press_up_(false), in_press_down_(false)
+{
+}
+
+void numeric_up_down_base::draw(draw_context& cxt) const
+{
+  const auto& prop = cxt.property;
+  cxt.draw_rect(local_pos(), value_size_, prop.frame_color0, color::zero());
+  cxt.draw_font(value_font_pos_, prop.font_color, value_str());
+  cxt.draw_rect(up_pos_, up_size_, prop.frame_color0, in_over_up_ ? prop.semiactive_color : color::zero());
+  cxt.draw_triangle(up_pos_ + vec2(up_size_.x / 2.f,       prop.mergin / 2.f),
+                    up_pos_ + vec2(up_size_.x * 1.f / 4.f, up_size_.y - prop.mergin / 2.f),
+                    up_pos_ + vec2(up_size_.x * 3.f / 4.f, up_size_.y - prop.mergin / 2.f),
+                    in_press_up_ ? prop.active_color : prop.frame_color0);
+  cxt.draw_rect(down_pos_, down_size_, prop.frame_color0, in_over_down_ ? prop.semiactive_color : color::zero());
+  cxt.draw_triangle(down_pos_ + vec2(down_size_.x / 2.f,       down_size_.y - prop.mergin / 2.f),
+                    down_pos_ + vec2(down_size_.x * 3.f / 4.f, prop.mergin / 2.f),
+                    down_pos_ + vec2(down_size_.x * 1.f / 4.f, prop.mergin / 2.f),
+                    in_press_down_ ? prop.active_color : prop.frame_color0);
+  cxt.draw_font(name_pos_, prop.font_color, name());
+}
+
+vec2 numeric_up_down_base::calc_layout(calc_layout_context& cxt)
+{
+  const auto& prop = cxt.property;
+  rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
+  value_size_.x = std::max(value_area.w + prop.mergin * 2.f, width_);
+  value_size_.y = prop.font_size + prop.mergin * 2.f;
+  value_font_pos_ = local_pos() + vec2(prop.mergin, prop.font_size + prop.mergin);
+  up_pos_ = local_pos() + vec2(value_size_.x, 0.f);
+  up_size_ = vec2(value_size_.y, value_size_.y / 2.f);
+  down_pos_ = up_pos_ + vec2(0.f, up_size_.y );
+  down_size_ = up_size_;
+  name_pos_ = up_pos_ + vec2(up_size_.x + prop.mergin, prop.font_size + prop.mergin);
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
+
+  set_size(vec2(value_size_.x + up_size_.x, value_size_.y));
+
+  return vec2(name_pos_.x + name_area.w, name_pos_.y + prop.mergin) - local_pos();
+}
+
+bool numeric_up_down_base::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
+{
+  bool r = false;
+  if (is_in_area(p, up_pos_, up_size_)) {
+    stk.push({shared_from_this(), 0});
+    r = true;
+  }
+  if (is_in_area(p, down_pos_, down_size_)) {
+    stk.push({shared_from_this(), 1});
+    r = true;
+  }
+  return r;
+}
+
+event_result numeric_up_down_base::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)
+{
+  if (button == MouseButton_Left) {
+    if (action == MouseAction_Press) {
+      if (is_in_area(p, up_pos_, up_size_)) {
+        in_press_up_ = true;
+        return { true, false };
+      }
+      if (is_in_area(p, down_pos_, down_size_)) {
+        in_press_down_ = true;
+        return { true, false };
+      }
+    } else {
+      if (is_in_area(p, up_pos_, up_size_)) {
+        if (in_press_up_) {
+          in_press_up_ = false;
+          increment();
+        }
+        return { true, false };
+      }
+      if (is_in_area(p, down_pos_, down_size_)) {
+        if (in_press_down_) {
+          in_press_down_ = false;
+          decrement();
+        }
+        return { true, false };
+      }
+    }
+  }
+  return { false, false };
+}
+
+event_result numeric_up_down_base::on_cursor_move(const vec2&)
+{
+  return { false, false };
+}
+
+event_result numeric_up_down_base::on_cursor_enter(const vec2& p)
+{
+  if (is_in_area(p, up_pos_, up_size_)) {
+    in_over_up_ = true;
+    return { true, false };
+  }
+  if (is_in_area(p, down_pos_, down_size_)) {
+    in_over_down_ = true;
+    return { true, false };
+  }
+  return { false, false };
+}
+
+event_result numeric_up_down_base::on_cursor_leave(const vec2& p)
+{
+  if (!is_in_area(p, up_pos_, up_size_)) {
+    in_over_up_ = false;
+  }
+  if (!is_in_area(p, down_pos_, down_size_)) {
+    in_over_down_ = false;
+  }
+
+  return { true, false };
 }
 
 

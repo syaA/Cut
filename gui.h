@@ -99,7 +99,7 @@ class component : public std::enable_shared_from_this<component>
 {
 public:
   typedef std::shared_ptr<component> ptr_t;
-  typedef std::stack<ptr_t> event_handler_stack_t;
+  typedef std::stack<std::pair<ptr_t, int>> event_handler_stack_t;
 
 public:
   virtual bool update() { return false; };
@@ -185,6 +185,7 @@ public:
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
   void calc_layout();
+  void recalc_layout();
   bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
   std::shared_ptr<window> add_window(const string& name);
@@ -208,8 +209,6 @@ public:
 
 protected:
   system(shader::ptr_t, font::renderer::ptr_t);
-
-  void recalc_layout();
 
 private:
   shader::ptr_t shader_;
@@ -573,6 +572,89 @@ private:
   value_t *value_;
   value_t min_value_;
   value_t max_value_;
+};
+
+
+class numeric_up_down_base : public component
+{
+public:
+  typedef std::shared_ptr<numeric_up_down_base> ptr_t;
+
+  static const float DEFAULT_WIDTH;
+
+public:
+  numeric_up_down_base(const string& name, float width = DEFAULT_WIDTH);
+
+  void draw(draw_context&) const override;
+  vec2 calc_layout(calc_layout_context&) override;
+  bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
+
+  event_result on_mouse_button(const vec2&, MouseButton, MouseAction, ModKey) override;
+  event_result on_cursor_move(const vec2&) override;
+  event_result on_cursor_enter(const vec2&) override;
+  event_result on_cursor_leave(const vec2&) override;
+
+protected:
+  virtual void increment() =0;
+  virtual void decrement() =0;
+  virtual string value_str() const =0;
+
+private:
+  vec2 name_pos_;
+  vec2 value_size_;
+  vec2 value_font_pos_;
+  vec2 up_pos_;
+  vec2 up_size_;
+  vec2 down_pos_;
+  vec2 down_size_;
+
+  float width_;
+  bool in_over_up_;
+  bool in_over_down_;
+  bool in_press_up_;
+  bool in_press_down_;
+};
+
+template<class T>
+class numeric_up_down : public numeric_up_down_base, public shared_ptr_creator<numeric_up_down<T>>
+{
+public:
+  typedef T value_t;
+  typedef std::function<void ()> callback_t;
+
+public:
+  numeric_up_down(const string& name,
+                  value_t* value, value_t mn, value_t mx, value_t inc = value_t(1),
+                  callback_t callback = 0,
+                  float width = numeric_up_down_base::DEFAULT_WIDTH)
+    : numeric_up_down_base(name, width),
+      value_(value), min_value_(mn), max_value_(mx), value_inc_(inc), callback_(callback) {}
+
+protected:
+  void increment() override
+  {
+    value_t value = clamp(*value_ + value_inc_, min_value_, max_value_);
+    if (*value_ != value) {
+      *value_ = value;
+      callback_();
+    }
+  }
+  void decrement() override
+  {
+    value_t value = clamp(*value_ - value_inc_, min_value_, max_value_);
+    if (*value_ != value) {
+      *value_ = value;
+      callback_();
+    }
+  }
+  string value_str() const override { return to_s(*value_); }
+  
+private:
+  value_t *value_;
+  value_t min_value_;
+  value_t max_value_;
+  value_t value_inc_;
+  callback_t callback_;
 };
 
 
