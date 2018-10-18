@@ -1259,16 +1259,17 @@ vec2 label::calc_layout(calc_layout_context& cxt)
 }
 
 
+const float text_box::DEFAULT_WIDTH = 120.f;
 
-text_box::text_box(const string& name, string_function_t f, float fixed_width)
-  : component(name), fixed_width_(fixed_width), string_function_(f)
+text_box::text_box(const string& name, string_function_t f, float width)
+  : component(name), width_(width), string_function_(f)
 {
 }
 
 bool text_box::update()
 {
   string str = string_function_();
-  bool r = (fixed_width_ <= 0.f) && (str_ != str);
+  bool r = str_ != str;
   str_ = str;
 
   return r;
@@ -1277,24 +1278,22 @@ bool text_box::update()
 void text_box::draw(draw_context& cxt) const
 {
   const auto& prop = cxt.property;
-  cxt.draw_rect(text_pos_, text_size_, prop.frame_color0, color::zero());
-   cxt.draw_font(name_pos_, prop.font_color, name());
+  cxt.draw_rect(local_pos(), text_size_, prop.frame_color0, color::zero());
+  cxt.draw_font(name_pos_, prop.font_color, name());
   cxt.draw_font(text_font_pos_, prop.font_color, str_);
 }
 
 vec2 text_box::calc_layout(calc_layout_context& cxt)
 {
   const auto& prop = cxt.property;
-  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(0.f, prop.font_size + prop.mergin);
   rect text_area = cxt.font_renderer->get_area(prop.font_size, str_);
-  float width = fixed_width_ > 0.f ? fixed_width_ : (float)text_area.w;
-  text_pos_ = local_pos() + vec2(name_area.w + prop.mergin, 0.f);
-  text_size_ = vec2(width + prop.mergin * 2.f, prop.font_size + prop.mergin * 2.f);
-  text_font_pos_.x = text_pos_.x + prop.mergin + width - text_area.w;
-  text_font_pos_.y = text_pos_.y + prop.font_size + prop.mergin;
+  float width = std::max(width_, text_area.w + prop.mergin * 2.f);
+  text_size_ = vec2(width, prop.font_size + prop.mergin * 2.f);
+  text_font_pos_ = local_pos() + vec2(prop.mergin, prop.font_size + prop.mergin);
+  name_pos_ = local_pos() + vec2(text_size_.x + prop.mergin, prop.font_size + prop.mergin);
+  rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
 
-  return text_pos_ + text_size_ - local_pos();
+  return name_pos_ + vec2(name_area.w, prop.mergin) - local_pos();
 }
 
 

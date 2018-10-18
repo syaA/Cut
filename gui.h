@@ -488,8 +488,10 @@ public:
   typedef std::shared_ptr<text_box> ptr_t;
   typedef std::function<string ()> string_function_t;
 
+  static const float DEFAULT_WIDTH;
+
 public:
-  text_box(const string& name, string_function_t, float fixed_width = 0.f);
+  text_box(const string& name, string_function_t, float width = DEFAULT_WIDTH);
 
   bool update() override;
   void draw(draw_context&) const override;
@@ -497,11 +499,10 @@ public:
 
 private:
   vec2 name_pos_;
-  vec2 text_pos_;
   vec2 text_size_;
   vec2 text_font_pos_;
 
-  float fixed_width_;
+  float width_;
 
   string_function_t string_function_;
   string str_;
