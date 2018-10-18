@@ -274,7 +274,7 @@ system::system(shader::ptr_t s, font::renderer::ptr_t f)
   property_.frame_color1 = color(1.f, 1.f, 1.f, .9f);
   property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
   property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
-  property_.round = 8.f;
+  property_.round = 4.f;
   property_.mergin = 4.f;
   property_.tickness = 4.f;
 }
@@ -1402,7 +1402,7 @@ vec2 numeric_up_down_base::calc_layout(calc_layout_context& cxt)
   value_size_.x = std::max(value_area.w + prop.mergin * 2.f, width_);
   value_size_.y = prop.font_size + prop.mergin * 2.f;
   value_font_pos_ = local_pos() + vec2(value_size_.x - value_area.w - prop.mergin, prop.font_size + prop.mergin);
-  up_pos_ = local_pos() + vec2(value_size_.x, 0.f);
+  up_pos_ = local_pos() + vec2(value_size_.x - 1.f, 0.f);
   up_size_ = vec2(value_size_.y, value_size_.y / 2.f);
   down_pos_ = up_pos_ + vec2(0.f, up_size_.y );
   down_size_ = up_size_;
