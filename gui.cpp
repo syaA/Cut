@@ -1401,7 +1401,7 @@ vec2 numeric_up_down_base::calc_layout(calc_layout_context& cxt)
   rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
   value_size_.x = std::max(value_area.w + prop.mergin * 2.f, width_);
   value_size_.y = prop.font_size + prop.mergin * 2.f;
-  value_font_pos_ = local_pos() + vec2(prop.mergin, prop.font_size + prop.mergin);
+  value_font_pos_ = local_pos() + vec2(value_size_.x - value_area.w - prop.mergin, prop.font_size + prop.mergin);
   up_pos_ = local_pos() + vec2(value_size_.x, 0.f);
   up_size_ = vec2(value_size_.y, value_size_.y / 2.f);
   down_pos_ = up_pos_ + vec2(0.f, up_size_.y );
