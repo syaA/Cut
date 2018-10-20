@@ -28,7 +28,7 @@ face::~face()
   FT_Done_Face(ft_face_);
 }
 
-FT_GlyphSlot face::get_glyph(char16_t c, int w, int h)
+FT_GlyphSlot face::get_glyph(char32_t c, int w, int h)
 {
   FT_Set_Pixel_Sizes(ft_face_, w, h);
   FT_Load_Glyph(ft_face_, FT_Get_Char_Index(ft_face_, c), FT_LOAD_RENDER);
@@ -93,7 +93,7 @@ renderer::~renderer()
   glDeleteBuffers(1, &vertex_buffer_);
 }
 
-size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u16string_view str, vec2 *end)
+size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u32string_view str, vec2 *end)
 {
   prepare_font(size, str);
 
@@ -164,7 +164,7 @@ size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u16s
   return vertex_array.size() / 6;
 }
 
-rect renderer::get_area(const ivec2& size, std::u16string_view str, vec2 *end)
+rect renderer::get_area(const ivec2& size, std::u32string_view str, vec2 *end)
 {
   prepare_font(size, str);
 
@@ -194,7 +194,7 @@ rect renderer::get_area(const ivec2& size, std::u16string_view str, vec2 *end)
   return { lr.x, lr.y, rb.x - lr.x, rb.y - lr.y};
 }
 
-void renderer::prepare_font(const ivec2& size, std::u16string_view str)
+void renderer::prepare_font(const ivec2& size, std::u32string_view str)
 {
   // テクスチャを準備.
   // 途中で失敗したらクリアして一度だけやりなおす.

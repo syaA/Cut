@@ -36,7 +36,7 @@ public:
   face(const char *file, int face_index);
   ~face();
 
-  FT_GlyphSlot get_glyph(char16_t, int w, int h);
+  FT_GlyphSlot get_glyph(char32_t, int w, int h);
 
   int get_height() { return ft_face_->size->metrics.height >> 6; }
 
@@ -77,7 +77,7 @@ public:
 public:
   typedef std::shared_ptr<renderer> ptr_t;
 
-  typedef std::tuple<char16_t, int, int> glyph_key;
+  typedef std::tuple<char32_t, int, int> glyph_key;
   struct glyph_key_hash {
     typedef std::size_t result_type;
     std::size_t operator()(const glyph_key& k) const
@@ -98,10 +98,10 @@ public:
   renderer(face::ptr_t, shader::ptr_t);
   virtual ~renderer();
 
-  size_t render(vec2 pos, const ivec2& size, const color&, std::u16string_view, vec2 *end = 0);
-  rect get_area(const ivec2& size, std::u16string_view, vec2 *end=0);
+  size_t render(vec2 pos, const ivec2& size, const color&, std::u32string_view, vec2 *end = 0);
+  rect get_area(const ivec2& size, std::u32string_view, vec2 *end=0);
 
-  void prepare_font(const ivec2& size, std::u16string_view);
+  void prepare_font(const ivec2& size, std::u32string_view);
 
   void set_screen_size(int w, int h) { screen_size_ = { (float)w, (float)h }; }
 

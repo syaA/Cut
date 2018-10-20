@@ -141,14 +141,14 @@ void draw_context::draw_line(const vec2& a, const vec2& b, const color& c)
   draw(GL_LINES, vertex_array, countof(vertex_array), index_array, countof(index_array), c, c);
 }
 
-void draw_context::draw_font(const vec2& pos, const color& c, const string& str)
+void draw_context::draw_font(const vec2& pos, const color& c, const string_t& str)
 {
   font_renderer->render(pos, { property.font_size, property.font_size }, c, str);
 }
 
 
 
-component::component(const string& name)
+component::component(const string_t& name)
   : name_(name), local_pos_(0.f, 0.f), size_(0.f, 0.f), layout_way_(LayoutWay_Vertical)
 {
 }
@@ -192,7 +192,7 @@ event_result component::on_input_key(int key, int scancode, KeyAction action, Mo
   return { false, false };
 }
 
-event_result component::on_input_char(char16_t code)
+event_result component::on_input_char(char_t code)
 {
   return { false, false };
 }
@@ -261,7 +261,7 @@ void component_set::clear_child()
 
 
 system::system(shader::ptr_t s, font::renderer::ptr_t f)
-  : component_set(u"root"),
+  : component_set(U"root"),
     shader_(s), font_renderer_(f),
     prev_cursor_pos_(0.f)
 {
@@ -337,7 +337,7 @@ bool system::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
   return ret;
 }
 
-std::shared_ptr<window> system::add_window(const string& name)
+std::shared_ptr<window> system::add_window(const string_t& name)
 {
   return add_child<window>(name);
 }
@@ -468,7 +468,7 @@ bool system::on_input_key_root(int key, int scancode, KeyAction action, ModKey m
   return r.accept;
 }
 
-bool system::on_input_char_root(char16_t code)
+bool system::on_input_char_root(char_t code)
 {
   event_result r;
   if (auto c = focus()) {
@@ -549,7 +549,7 @@ event_result drag_control::on_lost_focus()
 
 
 
-window::window(const string& name, bool opened )
+window::window(const string_t& name, bool opened )
   : component_set(name), in_open_(opened), in_press_(false), in_over_(false)
 {
 }
@@ -678,7 +678,7 @@ event_result window::on_cursor_leave(const vec2& p)
 
 
 
-group::group(const string& name, bool opened)
+group::group(const string_t& name, bool opened)
   : component_set(name), name_pos_(0.f), tri_size_(0.f),
     in_open_(opened), in_press_(false), in_over_(false)
 {
@@ -820,14 +820,14 @@ event_result group::on_cursor_leave(const vec2& p)
 
 
 
-button::button(const string& name, bool *notice)
+button::button(const string_t& name, bool *notice)
   : component(name), name_pos_(0.f), area_size_(0.f),
     in_press_(false), in_over_(false),
     notice_variable_(notice), notice_function_(0)
 {
 }
 
-button::button(const string& name, callback_t notice)
+button::button(const string_t& name, callback_t notice)
   : component(name), name_pos_(0.f), area_size_(0.f),
     in_press_(false), in_over_(false),
     notice_variable_(0), notice_function_(notice)
@@ -907,7 +907,7 @@ event_result button::on_cursor_leave(const vec2&)
 
 
 
-combo_box::combo_box(const string& name, int *value)
+combo_box::combo_box(const string_t& name, int *value)
   : component(name),
     name_pos_(0.f),
     in_open_(false), in_press_(false), in_over_(false), cur_index_(0),
@@ -1060,7 +1060,7 @@ event_result combo_box::on_lost_focus()
   return { true, true };
 }
 
-int combo_box::add_item(const string& s)
+int combo_box::add_item(const string_t& s)
 {
   item_array_.push_back(s);
   return (int)item_array_.size();
@@ -1091,7 +1091,7 @@ int combo_box::get_item_list_index(const vec2& p)
 
 
 
-check_box::check_box(const string& name, bool *value)
+check_box::check_box(const string_t& name, bool *value)
   : component(name), notice_variable_(value),
     in_press_(false), in_over_(false)
 {
@@ -1159,7 +1159,7 @@ event_result check_box::on_cursor_leave(const vec2&)
 
 
 
-radio_button::radio_button(const string& name, int *variable, int value)
+radio_button::radio_button(const string_t& name, int *variable, int value)
   : component(name), in_press_(false), in_over_(false),
     notice_variable_(variable), value_(value)
 {
@@ -1238,7 +1238,7 @@ event_result radio_button::on_cursor_leave(const vec2&)
 
 
 
-label::label(const string& name)
+label::label(const string_t& name)
   : component(name), name_pos_(0.f)
 {
 }
@@ -1261,14 +1261,14 @@ vec2 label::calc_layout(calc_layout_context& cxt)
 
 const float text_box::DEFAULT_WIDTH = 120.f;
 
-text_box::text_box(const string& name, string_function_t f, float width)
+text_box::text_box(const string_t& name, string_function_t f, float width)
   : component(name), width_(width), string_function_(f)
 {
 }
 
 bool text_box::update()
 {
-  string str = string_function_();
+  string_t str = string_function_();
   bool r = str_ != str;
   str_ = str;
 
@@ -1299,7 +1299,7 @@ vec2 text_box::calc_layout(calc_layout_context& cxt)
 
 const float slider_base::DEFAULT_WIDTH = 120.f;
 
-slider_base::slider_base(const string& name, float width)
+slider_base::slider_base(const string_t& name, float width)
   : component(name), width_(width), in_over_(false)
 {
 }
@@ -1371,7 +1371,7 @@ event_result slider_base::on_lost_focus()
 
 const float numeric_up_down_base::DEFAULT_WIDTH = 120.f;
 
-numeric_up_down_base::numeric_up_down_base(const string& name, float width)
+numeric_up_down_base::numeric_up_down_base(const string_t& name, float width)
   : component(name), width_(width),
     in_over_up_(false), in_over_down_(false), in_press_up_(false), in_press_down_(false)
 {

@@ -8,7 +8,8 @@
 namespace gui
 {
 
-typedef std::u16string string;
+typedef std::u32string string_t;
+typedef string_t::value_type char_t;
 
 struct vertex
 {
@@ -75,17 +76,17 @@ struct event_result
 };
 
 
-inline void to_s_apply_opt(std::basic_stringstream<char16_t>& ss) {}
+inline void to_s_apply_opt(std::basic_stringstream<char_t>& ss) {}
 template<class OptT, class... Opts>
-void to_s_apply_opt(std::basic_stringstream<char16_t>& ss, OptT&& opt, Opts&&... opts)
+void to_s_apply_opt(std::basic_stringstream<char_t>& ss, OptT&& opt, Opts&&... opts)
 {
   ss << opt;
   to_s_apply_opt(ss, opts...);
 }
 template<class T, class... Opts>
-string to_s(const T& v, Opts&&... opts)
+string_t to_s(const T& v, Opts&&... opts)
 {
-  std::basic_stringstream<char16_t> ss;
+  std::basic_stringstream<char_t> ss;
   to_s_apply_opt(ss, opts...);
   ss << v;
   return ss.str();
@@ -113,7 +114,7 @@ public:
   virtual event_result on_cursor_leave(const vec2&);
   virtual event_result on_mouse_scroll(const vec2&);
   virtual event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
-  virtual event_result on_input_char(char16_t code);
+  virtual event_result on_input_char(char_t code);
   virtual event_result on_acquire_focus();
   virtual event_result on_lost_focus();
 
@@ -121,16 +122,16 @@ public:
   const vec2& local_pos() const { return local_pos_; }
   void set_size(const vec2& s) { size_ = s; }
   const vec2& size() const { return size_; }
-  void set_name(const string& s) { name_ = s; }
-  const string& name() const { return name_; }
+  void set_name(const string_t& s) { name_ = s; }
+  const string_t& name() const { return name_; }
   void set_layout_way(LayoutWay l) { layout_way_ = l; }
   LayoutWay layout_way() const { return layout_way_; }
 
 protected:
-  component(const string& name);
+  component(const string_t& name);
 
 private:
-  string name_;
+  string_t name_;
   vec2 local_pos_;
   vec2 size_;
   LayoutWay layout_way_;
@@ -163,7 +164,7 @@ protected:
   array_t& child_array() { return child_array_; }
 
 protected:
-  component_set(const string&name) : component(name) {}
+  component_set(const string_t&name) : component(name) {}
 
 private:
   array_t child_array_;
@@ -188,7 +189,7 @@ public:
   void recalc_layout();
   bool make_event_handler_stack(const vec2& p, event_handler_stack_t&) override;
 
-  std::shared_ptr<window> add_window(const string& name);
+  std::shared_ptr<window> add_window(const string_t& name);
   std::shared_ptr<window> add_window(std::shared_ptr<window>);
   void remove_window(component_ptr_t);
   void clear_window();
@@ -199,7 +200,7 @@ public:
   bool on_cursor_leave_root(vec2);
   bool on_mouse_scroll_root(const vec2&);
   bool on_input_key_root(int key, int scancode, KeyAction action, ModKey mod);
-  bool on_input_char_root(char16_t code);
+  bool on_input_char_root(char_t code);
 
   void set_focus(component_ptr_t);
   component_ptr_t focus() const;
@@ -238,7 +239,7 @@ struct draw_context
   void draw_triangle(const vec2& p0, const vec2& p1, const vec2& p2, const color& c);
   void draw_rect(const vec2& pos, const vec2& size, const color& c0, const color& c1);
   void draw_line(const vec2& a, const vec2& b, const color& c);
-  void draw_font(const vec2& pos, const color& c, const string& str);
+  void draw_font(const vec2& pos, const color& c, const string_t& str);
 
   bool is_focused(component::ptr_t p) { return focused == p; }
 };
@@ -281,7 +282,7 @@ public:
   typedef std::shared_ptr<window> ptr_t;
 
 public:
-  window(const string& name, bool opened = true);
+  window(const string_t& name, bool opened = true);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -311,7 +312,7 @@ public:
   typedef std::shared_ptr<group> ptr_t;
 
 public:
-  group(const string& name, bool opened = true);
+  group(const string_t& name, bool opened = true);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -344,8 +345,8 @@ public:
   typedef std::function<void ()> callback_t;
 
 public:
-  button(const string& name, bool *notice);
-  button(const string& name, callback_t);
+  button(const string_t& name, bool *notice);
+  button(const string_t& name, callback_t);
 
   bool update() override;
   void draw(draw_context&) const override;
@@ -370,10 +371,10 @@ class combo_box : public component, public shared_ptr_creator<combo_box>
 {
 public:
   typedef std::shared_ptr<combo_box> ptr_t;
-  typedef std::vector<string> item_array_t;
+  typedef std::vector<string_t> item_array_t;
 
 public:
-  combo_box(const string& name, int *value);
+  combo_box(const string_t& name, int *value);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -384,7 +385,7 @@ public:
   event_result on_cursor_leave(const vec2&) override;
   event_result on_lost_focus();
 
-  int add_item(const string&);
+  int add_item(const string_t&);
   void remove_item(int);
   void clear_item();
 
@@ -419,7 +420,7 @@ public:
   typedef std::shared_ptr<check_box> ptr_t;
 
 public:
-  check_box(const string& name, bool *value);
+  check_box(const string_t& name, bool *value);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -445,7 +446,7 @@ public:
   typedef std::shared_ptr<radio_button> ptr_t;
 
 public:
-  radio_button(const string& name, int *variable, int value);
+  radio_button(const string_t& name, int *variable, int value);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -472,7 +473,7 @@ public:
   typedef std::shared_ptr<label> ptr_t;
 
 public:
-  label(const string& name);
+  label(const string_t& name);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -486,12 +487,12 @@ class text_box : public component, public shared_ptr_creator<text_box>
 {
 public:
   typedef std::shared_ptr<text_box> ptr_t;
-  typedef std::function<string ()> string_function_t;
+  typedef std::function<string_t ()> string_function_t;
 
   static const float DEFAULT_WIDTH;
 
 public:
-  text_box(const string& name, string_function_t, float width = DEFAULT_WIDTH);
+  text_box(const string_t& name, string_function_t, float width = DEFAULT_WIDTH);
 
   bool update() override;
   void draw(draw_context&) const override;
@@ -505,7 +506,7 @@ private:
   float width_;
 
   string_function_t string_function_;
-  string str_;
+  string_t str_;
 };
 
 
@@ -517,7 +518,7 @@ public:
   static const float DEFAULT_WIDTH;
 
 public:
-  slider_base(const string& name, float width = DEFAULT_WIDTH);
+  slider_base(const string_t& name, float width = DEFAULT_WIDTH);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -530,7 +531,7 @@ public:
 
 protected:
   virtual void set_value(float width) =0;
-  virtual string value_str() const =0;
+  virtual string_t value_str() const =0;
   virtual float value_width(float width) const =0;
 
 private:
@@ -554,7 +555,7 @@ public:
   typedef T value_t;
 
 public:
-  slider(const string& name, value_t *val, value_t mn, value_t mx, float width = slider_base::DEFAULT_WIDTH)
+  slider(const string_t& name, value_t *val, value_t mn, value_t mx, float width = slider_base::DEFAULT_WIDTH)
     : slider_base(name, width), value_(val), min_value_(mn), max_value_(mx) {}
 
 protected:
@@ -563,7 +564,7 @@ protected:
     *value_ = (value_t)((max_value_ - min_value_) * width + min_value_);
     *value_ = clamp(*value_, min_value_, max_value_);
   }
-  string value_str() const override { return to_s(*value_); }
+  string_t value_str() const override { return to_s(*value_); }
   float value_width(float width) const override
   {
     return (width * (*value_ - min_value_)) / (max_value_ - min_value_);
@@ -584,7 +585,7 @@ public:
   static const float DEFAULT_WIDTH;
 
 public:
-  numeric_up_down_base(const string& name, float width = DEFAULT_WIDTH);
+  numeric_up_down_base(const string_t& name, float width = DEFAULT_WIDTH);
 
   void draw(draw_context&) const override;
   vec2 calc_layout(calc_layout_context&) override;
@@ -598,7 +599,7 @@ public:
 protected:
   virtual void increment() =0;
   virtual void decrement() =0;
-  virtual string value_str() const =0;
+  virtual string_t value_str() const =0;
 
 private:
   vec2 name_pos_;
@@ -624,7 +625,7 @@ public:
   typedef std::function<void ()> callback_t;
 
 public:
-  numeric_up_down(const string& name,
+  numeric_up_down(const string_t& name,
                   value_t* value, value_t mn, value_t mx, value_t inc = value_t(1),
                   callback_t callback = 0,
                   float width = numeric_up_down_base::DEFAULT_WIDTH)
@@ -648,7 +649,7 @@ protected:
       callback_();
     }
   }
-  string value_str() const override { return to_s(*value_); }
+  string_t value_str() const override { return to_s(*value_); }
   
 private:
   value_t *value_;
