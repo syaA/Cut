@@ -30,6 +30,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   gui::glfw_input_key(world()->get<gui::system::ptr_t>("gui"), window, key, scancode, action, mods);
 }
 
+void char_callback(GLFWwindow* window, unsigned int code)
+{
+  gui::glfw_input_char(world()->get<gui::system::ptr_t>("gui"), window, code);
+}
+
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mod)
 {
   if (gui::glfw_mouse_button(world()->get<gui::system::ptr_t>("gui"), window, button, action, mod)) {
@@ -93,6 +98,7 @@ int main(int argc, char **argv)
   }
 
   glfwSetKeyCallback(window, key_callback);
+  glfwSetCharCallback(window, char_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
   glfwSetCursorPosCallback(window, cursor_pos_callback);
   glfwSetCursorEnterCallback(window, cursor_enter_callback);

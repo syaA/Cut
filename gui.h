@@ -58,10 +58,22 @@ enum ModKey
   ModKey_All = ModKey_Shift | ModKey_Control | ModKey_Alt,
 };
 
-enum KeyAction {
+enum KeyAction
+{
   KeyAction_Release,
   KeyAction_Press,
   KeyAction_Repeat,
+};
+
+enum Key
+{
+  Key_Enter,
+  Key_Backspace,
+  Key_Delete,
+  Key_Left,
+  Key_Right,
+  Key_Home,
+  Key_End,
 };
 
 struct event_result
@@ -90,6 +102,15 @@ string_t to_s(const T& v, Opts&&... opts)
   to_s_apply_opt(ss, opts...);
   ss << v;
   return ss.str();
+}
+template<class T>
+T from_s(const string_t& s)
+{
+  std::basic_stringstream<char_t> ss;
+  ss << s;
+  T v;
+  ss >> v;
+  return v;
 }
 
 
@@ -273,6 +294,31 @@ private:
   vec2 area_pos_;
   vec2 area_size_;
   bool on_drag_;
+};
+
+
+class textedit_control
+{
+public:
+  textedit_control(size_t len = 20);
+  virtual ~textedit_control() =default;
+
+  void draw_font(const vec2& base_pos, draw_context& cxt) const;
+  void draw_cursor(const vec2& base_pos, draw_context& cxt) const;
+
+  event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod);
+  event_result on_input_char(char_t code);
+  
+  const string_t& str() const { return str_; }
+  size_t cursor() const { return cursor_; }
+
+  void set_str(const string_t& str) { str_ = str; }
+  void set_cursor(size_t cursor) { cursor_ = cursor; }
+
+private:
+  string_t str_;
+  size_t cursor_;
+  size_t max_len_;
 };
 
 
@@ -595,11 +641,21 @@ public:
   event_result on_cursor_move(const vec2&) override;
   event_result on_cursor_enter(const vec2&) override;
   event_result on_cursor_leave(const vec2&) override;
+  event_result on_input_key(int key, int scancode, KeyAction action, ModKey mod) override;
+  event_result on_input_char(char_t code) override;
+  event_result on_lost_focus() override;
 
 protected:
   virtual void increment() =0;
   virtual void decrement() =0;
-  virtual string_t value_str() const =0;
+  virtual string_t str_value() const =0;
+  virtual void value_str(const string_t& str) =0;
+  virtual bool is_accept_char(char_t code) const { return true; }
+
+  void set_str(const string_t& str) { textedit_.set_str(str); };
+
+private:
+  void end_textedit();
 
 private:
   vec2 name_pos_;
@@ -610,11 +666,16 @@ private:
   vec2 down_pos_;
   vec2 down_size_;
 
+  textedit_control textedit_;
+  
   float width_;
   bool in_over_up_;
   bool in_over_down_;
+  bool in_over_textedit_;
   bool in_press_up_;
   bool in_press_down_;
+  bool in_press_textedit_;
+  bool in_textedit_;
 };
 
 template<class T>
@@ -630,26 +691,41 @@ public:
                   callback_t callback = 0,
                   float width = numeric_up_down_base::DEFAULT_WIDTH)
     : numeric_up_down_base(name, width),
-      value_(value), min_value_(mn), max_value_(mx), value_inc_(inc), callback_(callback) {}
+      value_(value), min_value_(mn), max_value_(mx), value_inc_(inc), callback_(callback)
+  {
+    set_str(str_value());
+  }
 
 protected:
-  void increment() override
+  void increment() override { change_value(*value_ + value_inc_); }
+  void decrement() override { change_value(*value_ - value_inc_); }
+  string_t str_value() const override { return to_s(*value_); }
+  void value_str(const string_t& str) override { change_value(from_s<T>(str)); }
+  bool is_accept_char(char_t code) const override
   {
-    value_t value = clamp(*value_ + value_inc_, min_value_, max_value_);
+    if constexpr (std::is_integral<T>::value) {
+      if constexpr (std::is_signed<T>::value) {
+        return ((code >= U'0') && (code <= U'9')) || (code == U'-') || (code == U'+');
+      } else {
+        return ((code >= U'0') && (code <= U'9'));
+      }
+    } else if constexpr (std::is_floating_point<T>::value) {
+        return ((code >= U'0') && (code <= U'9')) || (code == U'-') || (code == U'+') || (code == '.');
+    } else {
+      return true;
+    }
+  }
+
+private:
+  void change_value(value_t value)
+  {
+    value = clamp(value, min_value_, max_value_);
     if (*value_ != value) {
       *value_ = value;
+      set_str(str_value());
       callback_();
     }
   }
-  void decrement() override
-  {
-    value_t value = clamp(*value_ - value_inc_, min_value_, max_value_);
-    if (*value_ != value) {
-      *value_ = value;
-      callback_();
-    }
-  }
-  string_t value_str() const override { return to_s(*value_); }
   
 private:
   value_t *value_;

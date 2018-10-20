@@ -16,6 +16,7 @@
 #include <initializer_list>
 #include <any>
 #include <functional>
+#include <type_traits>
 
 #include <cstdint>
 #include <cmath>

@@ -549,6 +549,75 @@ event_result drag_control::on_lost_focus()
 
 
 
+textedit_control::textedit_control(size_t len)
+  : cursor_(0), max_len_(len)
+{
+}
+
+void textedit_control::draw_font(const vec2& base_pos, draw_context& cxt) const
+{
+  cxt.draw_font(base_pos, cxt.property.font_color, str_);
+}
+
+void textedit_control::draw_cursor(const vec2& base_pos, draw_context& cxt) const
+{
+  const system_property& prop = cxt.property;
+  rect area = cxt.font_renderer->get_area(prop.font_size, {str_.c_str(), cursor_});
+  cxt.draw_line(vec2(base_pos.x + area.w, base_pos.y),
+                vec2(base_pos.x + area.w, base_pos.y - prop.font_size),
+                cxt.property.frame_color0);
+}
+
+event_result textedit_control::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
+{
+  if ((action == KeyAction_Press) || action == KeyAction_Repeat) {
+    switch (key) {
+    case Key_Enter:
+      return { true, false };
+    case Key_Backspace:
+      if (cursor_ > 0) {
+        --cursor_;
+        str_.erase(str_.begin() + cursor_);
+      }
+      return { false, true };
+    case Key_Delete:
+      if (cursor_ < str_.size()) {
+        str_.erase(str_.begin() + cursor_);
+      }
+      return { false, true };
+    case Key_Left:
+      if (cursor_ > 0) {
+        --cursor_;
+      }
+      break;
+    case Key_Right:
+      if (cursor_ < str_.size()) {
+        ++cursor_;
+      }
+      break;
+    case Key_Home:
+      cursor_ = 0;
+      break;
+    case Key_End:
+      cursor_ = str_.size();
+      break;
+    }
+  }
+  return { false, false };
+}
+
+event_result textedit_control::on_input_char(char_t code)
+{
+  if (str_.length() >= max_len_) {
+    return { false, false };
+  }
+  str_.insert(cursor_, 1, code);
+  ++cursor_;
+  return { true, true };
+}
+
+
+
 window::window(const string_t& name, bool opened )
   : component_set(name), in_open_(opened), in_press_(false), in_over_(false)
 {
@@ -1373,15 +1442,22 @@ const float numeric_up_down_base::DEFAULT_WIDTH = 120.f;
 
 numeric_up_down_base::numeric_up_down_base(const string_t& name, float width)
   : component(name), width_(width),
-    in_over_up_(false), in_over_down_(false), in_press_up_(false), in_press_down_(false)
+    in_over_up_(false), in_over_down_(false), in_over_textedit_(false),
+    in_press_up_(false), in_press_down_(false), in_press_textedit_(false),
+    in_textedit_(false)
 {
 }
 
 void numeric_up_down_base::draw(draw_context& cxt) const
 {
   const auto& prop = cxt.property;
-  cxt.draw_rect(local_pos(), value_size_, prop.frame_color0, color::zero());
-  cxt.draw_font(value_font_pos_, prop.font_color, value_str());
+  cxt.draw_rect(local_pos(), value_size_,
+                in_textedit_ ? prop.active_color :
+                in_over_textedit_ ? prop.semiactive_color : prop.frame_color0, color::zero());
+  textedit_.draw_font(value_font_pos_, cxt);
+  if (in_textedit_) {
+    textedit_.draw_cursor(value_font_pos_, cxt);
+  }
   cxt.draw_rect(up_pos_, up_size_, prop.frame_color0, in_over_up_ ? prop.semiactive_color : color::zero());
   cxt.draw_triangle(up_pos_ + vec2(up_size_.x / 2.f,       prop.mergin / 2.f),
                     up_pos_ + vec2(up_size_.x * 1.f / 4.f, up_size_.y - prop.mergin / 2.f),
@@ -1398,7 +1474,7 @@ void numeric_up_down_base::draw(draw_context& cxt) const
 vec2 numeric_up_down_base::calc_layout(calc_layout_context& cxt)
 {
   const auto& prop = cxt.property;
-  rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
+  rect value_area = cxt.font_renderer->get_area(prop.font_size, textedit_.str());
   value_size_.x = std::max(value_area.w + prop.mergin * 2.f, width_);
   value_size_.y = prop.font_size + prop.mergin * 2.f;
   value_font_pos_ = local_pos() + vec2(value_size_.x - value_area.w - prop.mergin, prop.font_size + prop.mergin);
@@ -1425,6 +1501,10 @@ bool numeric_up_down_base::make_event_handler_stack(const vec2& p, event_handler
     stk.push({shared_from_this(), 1});
     r = true;
   }
+  if (is_in_area(p, local_pos(), value_size_)) {
+    stk.push({shared_from_this(), 2});
+    r = true;
+  }
   return r;
 }
 
@@ -1434,10 +1514,16 @@ event_result numeric_up_down_base::on_mouse_button(const vec2& p, MouseButton bu
     if (action == MouseAction_Press) {
       if (is_in_area(p, up_pos_, up_size_)) {
         in_press_up_ = true;
+        end_textedit();
         return { true, false };
       }
       if (is_in_area(p, down_pos_, down_size_)) {
         in_press_down_ = true;
+        end_textedit();
+        return { true, false };
+      }
+      if (is_in_area(p, local_pos(), value_size_)) {
+        in_press_textedit_ = true;
         return { true, false };
       }
     } else {
@@ -1453,6 +1539,12 @@ event_result numeric_up_down_base::on_mouse_button(const vec2& p, MouseButton bu
           in_press_down_ = false;
           decrement();
         }
+        return { true, false };
+      }
+      if (is_in_area(p, local_pos(), value_size_)) {
+        in_press_textedit_ = false;
+        in_textedit_ = true;
+        textedit_.set_cursor(0);
         return { true, false };
       }
     }
@@ -1475,6 +1567,10 @@ event_result numeric_up_down_base::on_cursor_enter(const vec2& p)
     in_over_down_ = true;
     return { true, false };
   }
+  if (is_in_area(p, local_pos(), value_size_)) {
+    in_over_textedit_ = true;
+    return { true, false };
+  }
   return { false, false };
 }
 
@@ -1486,9 +1582,48 @@ event_result numeric_up_down_base::on_cursor_leave(const vec2& p)
   if (!is_in_area(p, down_pos_, down_size_)) {
     in_over_down_ = false;
   }
+  if (!is_in_area(p, local_pos(), value_size_)) {
+    in_over_textedit_ = false;
+    return { true, false };
+  }
 
   return { true, false };
 }
 
+event_result numeric_up_down_base::on_input_key(int key, int scancode, KeyAction action, ModKey mod)
+{
+  if (in_textedit_) {
+    auto r = textedit_.on_input_key(key, scancode, action, mod);
+    if (r.accept) {
+      end_textedit();
+    }
+    return { true, r.recalc_layout };
+  }
+  return { false, false };
+}
+
+event_result numeric_up_down_base::on_input_char(char_t code)
+{
+  if (in_textedit_) {
+    if (is_accept_char(code)) {
+      return textedit_.on_input_char(code);
+    }
+  }
+  return { false, false };
+}
+
+event_result numeric_up_down_base::on_lost_focus()
+{
+  if (in_textedit_) {
+    end_textedit();
+  }
+  return { true, false };
+}
+
+void numeric_up_down_base::end_textedit()
+{
+  value_str(textedit_.str());
+  in_textedit_ = false;
+}
 
 } // end of namespace gui

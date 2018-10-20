@@ -47,12 +47,24 @@ inline bool glfw_mouse_scroll(system::ptr_t sys, GLFWwindow *, double x, double 
 
 inline bool glfw_input_key(system::ptr_t sys, GLFWwindow *, int key, int scancode, int action, int mod)
 {
+  switch (key) {
+#define DEF_KEY(glfw, gui) case GLFW_KEY_##glfw: key = Key_##gui; break
+DEF_KEY(ENTER, Enter);
+DEF_KEY(BACKSPACE, Backspace);
+DEF_KEY(DELETE, Delete);
+DEF_KEY(LEFT, Left);
+DEF_KEY(RIGHT, Right);
+DEF_KEY(HOME, Home);
+DEF_KEY(END, End);
+#undef DEF_KEY
+  }
+
   return sys->on_input_key_root(key, scancode, (KeyAction)action, (ModKey)mod);
 }
  
 inline bool glfw_input_char(system::ptr_t sys, GLFWwindow *, unsigned int code)
 {
-  return sys->on_input_char_root((char16_t)code);
+  return sys->on_input_char_root(code);
 }
 
 
