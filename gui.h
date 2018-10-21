@@ -161,6 +161,7 @@ private:
 class component_set : public component
 {
 public:
+  typedef std::shared_ptr<component_set> ptr_t;
   typedef component::ptr_t component_ptr_t;
   typedef std::vector<component_ptr_t> array_t;
 
@@ -559,8 +560,6 @@ private:
 class slider_base : public component
 {
 public:
-  typedef std::shared_ptr<slider_base> ptr_t;
-
   static const float DEFAULT_WIDTH;
 
 public:
@@ -597,7 +596,7 @@ template<class T>
 class slider : public slider_base, public shared_ptr_creator<slider<T>>
 {
 public:
-  std::shared_ptr<slider> ptr_t;
+  typedef std::shared_ptr<slider> ptr_t;
   typedef T value_t;
 
 public:
@@ -626,8 +625,6 @@ private:
 class numeric_up_down_base : public component
 {
 public:
-  typedef std::shared_ptr<numeric_up_down_base> ptr_t;
-
   static const float DEFAULT_WIDTH;
 
 public:
@@ -682,6 +679,7 @@ template<class T>
 class numeric_up_down : public numeric_up_down_base, public shared_ptr_creator<numeric_up_down<T>>
 {
 public:
+  typedef std::shared_ptr<numeric_up_down_base> ptr_t;
   typedef T value_t;
   typedef std::function<void ()> callback_t;
 
@@ -735,6 +733,71 @@ private:
   callback_t callback_;
 };
 
+
+
+class constructor
+{
+public:
+  typedef std::stack<component_set::ptr_t> component_set_stack;
+
+public:
+  constructor(gui::system::ptr_t p);
+  virtual ~constructor();
+
+  template<class... Args>
+  window::ptr_t window(Args... args)
+  {
+    auto w = window::create(args...);
+    system_->add_window(w);
+    parent_stk_ = component_set_stack();
+    parent_stk_.push(w);
+    cur_ = w;
+    return w;
+  }
+  template<class... Args>
+  group::ptr_t begin_group(Args... args) {
+    auto grp = group::create(args...);
+    add(grp);
+    parent_stk_.push(grp);
+    return grp;
+  }
+  void end_group()
+  {
+    parent_stk_.pop();
+  }
+  template<class... Args>
+  gui::button::ptr_t button(Args... args) { return add(gui::button::create(args...)); }
+  template<class... Args>
+  gui::combo_box::ptr_t combo_box(Args... args) { return add(gui::combo_box::create(args...)); }
+  template<class... Args>
+  gui::check_box::ptr_t check_box(Args... args) { return add(gui::check_box::create(args...)); }
+  template<class... Args>
+  gui::radio_button::ptr_t radio_button(Args... args) { return add(gui::radio_button::create(args...)); }
+  template<class... Args>
+  gui::label::ptr_t label(Args... args) { return add(gui::label::create(args...)); }
+  template<class... Args>
+  gui::text_box::ptr_t text_box(Args... args) { return add(gui::text_box::create(args...)); }
+  template<class T, class... Args>
+  typename gui::slider<T>::ptr_t slider(Args... args) { return add(gui::slider<T>::create(args...)); }
+  template<class T, class... Args>
+  typename gui::numeric_up_down<T>::ptr_t numeric_up_down(Args... args) { return add(gui::numeric_up_down<T>::create(args...)); }
+
+  template<class P>
+  P add(P p)
+  {
+    assert(!parent_stk_.empty());
+    parent_stk_.top()->add_child(p);
+    cur_ = p;
+    return p;
+  }
+
+  void same_line();
+
+private:
+  system::ptr_t system_;
+  component_set_stack parent_stk_;
+  component::ptr_t cur_;
+};
 
 } // end of namepsace gui
 

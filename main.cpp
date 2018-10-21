@@ -193,6 +193,7 @@ int main(int argc, char **argv)
     win->add_child<gui::text_box>(U"カメラ", [=](){ return gui::to_s(scn->root_camera().eye(),
                                                                      std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
   }
+#if 0
   {
     auto win = gui_system->add_window(U"test window");
     win->add_child<gui::check_box>(U"mouse position", &visible_mouse_point);
@@ -209,6 +210,30 @@ int main(int argc, char **argv)
     win->add_child<gui::text_box>(U"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
                                                                      std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
   }
+#else
+  {
+    gui::constructor c(gui_system);
+    c.window(U"test window");
+    c.check_box(U"mouse position", &visible_mouse_point);
+    c.button(U"button", [=](){ std::cout << "click!" << std::endl; });
+    c.begin_group(U"group");
+    auto cmb = c.combo_box(U"combo_box", &morph);
+    cmb->add_item(U"1st item");
+    cmb->add_item(U"２つめのアイテム");
+    cmb->add_item(U"3rd item");
+    c.radio_button(U"radio_button0", &mode, 0);
+    c.same_line();
+    c.radio_button(U"radio_button1", &mode, 1);
+    c.same_line();
+    c.radio_button(U"radio_button2", &mode, 2);
+    c.end_group();
+    c.label(U"label");
+    c.text_box(U"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
+                                                  std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
+    c.slider<float>(U"slider", &gui_system->property().frame_color0.r, 0.f, 1.f);
+    c.numeric_up_down<float>(U"up_down", &gui_system->property().round, 0.f, 20.f, 1.f, [=](){ gui_system->recalc_layout(); });
+  }
+#endif
   {
     auto win = gui_system->add_window(U"gui param");
     win->add_child(gui::slider<float>::create(U"color0.r", &gui_system->property().frame_color0.r, 0.f, 1.f));

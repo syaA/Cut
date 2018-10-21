@@ -1626,4 +1626,23 @@ void numeric_up_down_base::end_textedit()
   in_textedit_ = false;
 }
 
+
+
+constructor::constructor(gui::system::ptr_t p)
+  : system_(p)
+{
+}
+
+constructor::~constructor()
+{
+  system_->calc_layout();
+}
+
+void constructor::same_line()
+{
+  if (cur_) {
+    cur_->set_layout_way(LayoutWay_Horizon);
+  }
+}
+
 } // end of namespace gui
