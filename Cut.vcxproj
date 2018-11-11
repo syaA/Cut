@@ -27,7 +27,7 @@
     <ClCompile Include="gui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
-    <ClCompile Include="pmx_loader.cpp" />
+    <ClCompile Include="pmx.cpp" />
     <ClCompile Include="png_loader.cpp" />
     <ClCompile Include="rect_packer.cpp" />
     <ClCompile Include="scene.cpp" />
@@ -40,6 +40,7 @@
     </ClCompile>
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="trackball.cpp" />
+    <ClCompile Include="utf.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -53,8 +54,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="model.h" />
-    <ClInclude Include="pmx_loader.h" />
-    <ClInclude Include="png_loader.h" />
+    <ClInclude Include="pmx.h" />
     <ClInclude Include="rect_packer.h" />
     <ClInclude Include="resource_repository.h" />
     <ClInclude Include="scene.h" />
@@ -63,8 +63,12 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="trackball.h" />
+    <ClInclude Include="utf.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="vec.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="NatvisFile.natvis" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

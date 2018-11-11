@@ -12,11 +12,6 @@ struct vec_mem<ValueT, 2>
   value_t *begin() { return &x; }
   const value_t *begin() const { return &x; }
   const value_t *end() const { return &y + 1; }
-
-  vec_mem() {}
-  vec_mem(value_t x, value_t y) : x(x), y(y) {}
-  explicit vec_mem(value_t v) : vec_mem(v, v) {}
-  vec_mem(const vec_mem& o) : vec_mem(o.x, o.y) {}
 };
 
 template<class ValueT>
@@ -27,11 +22,6 @@ struct vec_mem<ValueT, 3>
   value_t *begin() { return &x; }
   const value_t *begin() const { return &x; }
   const value_t *end() const { return &z + 1; }
-
-  vec_mem() {}
-  vec_mem(value_t x, value_t y, value_t z) : x(x), y(y), z(z) {}
-  explicit vec_mem(value_t v) : vec_mem(v, v, v) {}
-  vec_mem(const vec_mem& o) : vec_mem(o.x, o.y, o.z) {}
 };
 
 template<class ValueT>
@@ -42,11 +32,6 @@ struct vec_mem<ValueT, 4>
   value_t *begin() { return &x; }
   const value_t *begin() const { return &x; }
   const value_t *end() const { return &w + 1; }
-
-  vec_mem() {}
-  vec_mem(value_t x, value_t y, value_t z, value_t w) : x(x), y(y), z(z), w(w) {}
-  explicit vec_mem(value_t v) : vec_mem(v, v, v) {}
-  vec_mem(const vec_mem& o) : vec_mem(o.x, o.y, o.z, o.w) {}
 };
 
 
@@ -57,13 +42,6 @@ struct vec : public MemberT<ValueT, Dim>
   typedef ValueT value_t;
   static const int N = Dim;
 
-  vec() {}
-  explicit vec(float v) : member_t(v) {}
-  template<class... Args>
-  vec(Args... args) : member_t(args...) {}
-  vec(const vec& o) : member_t(o) {}
-  vec(std::initializer_list<value_t> init) : member_t(value_t()) { std::copy(init.begin(), init.end(), begin()); }
-
   value_t *begin() { return member_t::begin(); }
   const value_t *begin() const { return member_t::begin(); }
   const value_t *end() const { return member_t::end(); }
@@ -72,19 +50,21 @@ struct vec : public MemberT<ValueT, Dim>
   value_t& operator[](int i) { return begin()[i]; }
 
   template<class Pred>
-  vec& map(Pred p) { for (auto& v : *this) { v = p(v); } return *this; }
+  vec& map_a(Pred p) { for (auto& v : *this) { v = p(v); } return *this; }
   template<class Pred>
-  vec& zip(const vec& o, Pred p) { for (int i=0; i<N; ++i) { (*this)[i] = p((*this)[i], o[i]); } return *this; }
+  vec& zip_a(const vec& o, Pred p) { for (int i=0; i<N; ++i) { (*this)[i] = p((*this)[i], o[i]); } return *this; }
   template<class Pred>
   float reduce(Pred p, value_t r = 0.f) { for (int i=0; i<N; ++i) { p(r, (*this)[i]); } return r; }
   
-  vec& operator=(const vec& v) { return zip(v, [](float a, float b) { return b; }); }
-  vec& operator+=(const vec& v) { return zip(v, [](float a, float b) { return a + b; }); }
-  vec& operator-=(const vec& v) { return zip(v, [](float a, float b) { return a - b; }); }
-  vec& operator*=(const vec& v) { return zip(v, [](float a, float b) { return a * b; }); }
-  vec& operator/=(const vec& v) { return zip(v, [](float a, float b) { return a / b; }); }
-  vec& operator*=(float a) { return map([=](float v) { return v * a; }); }
-  vec& operator/=(float a) { return map([=](float v) { return v / a; }); }
+  vec& operator=(const vec& v) { return zip_a(v, [](float a, float b) { return b; }); }
+  vec& operator+() { return *this; }
+  vec& operator-() { return map_a([](float v) { return -v; }); }
+  vec& operator+=(const vec& v) { return zip_a(v, [](float a, float b) { return a + b; }); }
+  vec& operator-=(const vec& v) { return zip_a(v, [](float a, float b) { return a - b; }); }
+  vec& operator*=(const vec& v) { return zip_a(v, [](float a, float b) { return a * b; }); }
+  vec& operator/=(const vec& v) { return zip_a(v, [](float a, float b) { return a / b; }); }
+  vec& operator*=(float a) { return map_a([=](float v) { return v * a; }); }
+  vec& operator/=(float a) { return map_a([=](float v) { return v / a; }); }
 
   bool operator==(const vec& b) {
     for (int i=0; i<N; ++i) {
@@ -94,7 +74,7 @@ struct vec : public MemberT<ValueT, Dim>
   }
   bool operator!=(const vec& b) { return !(*this == b); }
 
-  static vec replicate(float v) { return vec(v); }
+  static vec replicate(float v) { vec r; return r.map_a([=](auto) { return v; }); }
   static vec zero() { return replicate(0); }
   static vec one() { return replicate(1); }
 };
@@ -200,14 +180,14 @@ template<class T, int Dim, template<class, int> class MemberT>
 vec<T, Dim, MemberT>
 min(const vec<T, Dim, MemberT>& a, const vec<T, Dim, MemberT>& b)
 {
-  vec<T, Dim, MemberT> r(a); r.zip(std::min); return r;
+  vec<T, Dim, MemberT> r(a); r.zip_a(std::min); return r;
 }
 
 template<class T, int Dim, template<class, int> class MemberT>
 vec<T, Dim, MemberT>
 max(const vec<T, Dim, MemberT>& a, const vec<T, Dim, MemberT>& b)
 {
-  vec<T, Dim, MemberT> r(a); r.zip(std::max); return r;
+  vec<T, Dim, MemberT> r(a); r.zip_a(std::max); return r;
 }
 
 template<class T, int Dim, template<class, int> class MemberT>
@@ -244,7 +224,7 @@ template<class T, template<class, int> class MemberT>
 vec<T, 3, MemberT>
 cross(const vec<T, 3, MemberT>& a, const vec<T, 3, MemberT>& b)
 {
-  return vec<T, 3, MemberT>(a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x);
+  return vec<T, 3, MemberT>{a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x};
 }
 
 template<class T, template<class, int> class MemberT>

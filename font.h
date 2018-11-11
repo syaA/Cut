@@ -99,6 +99,7 @@ public:
   virtual ~renderer();
 
   size_t render(vec2 pos, const ivec2& size, const color&, std::u32string_view, vec2 *end = 0);
+  rect get_area(int size, std::u32string_view, vec2 *end=0);
   rect get_area(const ivec2& size, std::u32string_view, vec2 *end=0);
 
   void prepare_font(const ivec2& size, std::u32string_view);

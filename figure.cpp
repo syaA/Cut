@@ -28,17 +28,17 @@ void line::draw(scene *scn, draw_context *ctx, manager *m)
 
 void coordinator::draw(scene *scn, draw_context *ctx, manager *m)
 {
-  vec3 o(mtx._03, mtx._13, mtx._23);
-  vec3 x(mtx._00, mtx._10, mtx._20);
-  vec3 y(mtx._01, mtx._11, mtx._21);
-  vec3 z(mtx._02, mtx._12, mtx._22);
+  vec3 o{ mtx._03, mtx._13, mtx._23 };
+  vec3 x{ mtx._00, mtx._10, mtx._20 };
+  vec3 y{ mtx._01, mtx._11, mtx._21 };
+  vec3 z{ mtx._02, mtx._12, mtx._22 };
   manager::vertex_t vert[] = {
-    { o,     color(1.f, 0.f, 0.f, 1.f) },
-    { o + x, color(1.f, 0.f, 0.f, 1.f) },
-    { o,     color(0.f, 1.f, 0.f, 1.f) },
-    { o + y, color(0.f, 1.f, 0.f, 1.f) },
-    { o,     color(0.f, 0.f, 1.f, 1.f) },
-    { o + z, color(0.f, 0.f, 1.f, 1.f) },
+    { o,     color{ 1.f, 0.f, 0.f, 1.f } },
+    { o + x, color{ 1.f, 0.f, 0.f, 1.f } },
+    { o,     color{ 0.f, 1.f, 0.f, 1.f } },
+    { o + y, color{ 0.f, 1.f, 0.f, 1.f } },
+    { o,     color{ 0.f, 0.f, 1.f, 1.f } },
+    { o + z, color{ 0.f, 0.f, 1.f, 1.f } },
   };
   m->draw(scn, ctx, matrix::identity(), GL_LINES, vert, countof(vert));
 }

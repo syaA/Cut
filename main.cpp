@@ -5,7 +5,7 @@
 #include "scene.h"
 #include "figure.h"
 
-#include "pmx_loader.h"
+#include "pmx.h"
 #include "resource_repository.h"
 
 #include "font.h"
@@ -141,21 +141,20 @@ int main(int argc, char **argv)
     }
     modelname = "assets/" + modelname;
   }
-  auto pmx_model = std::make_shared<model>();
-  load_pmx(pmx_model.get(),
-           modelname.c_str(),
-           rm.get());
-  rm->add("main_pmx", pmx_model);
+  auto pmx_data = std::make_shared<pmx::data>();
+  pmx::enable_trace(true);
+  pmx_data->load_from_file(modelname);
+//  rm->add("main_pmx", pmx_model);
 
   world()->add("main_scene", std::make_shared<scene>());
   auto scn = world()->get<scene::ptr_t>("main_scene");
   scn->root_camera() = 
-    camera(vec3(0.f, 10.f, -30.f),
-           vec3(0.f, 10.f, 0.f),
-           vec3(0.f, 1.f, 0.f),
+    camera(vec3{ 0.f, 10.f, -30.f },
+           vec3{ 0.f, 10.f, 0.f },
+           vec3{ 0.f, 1.f, 0.f },
            deg2rad(45.f), 1.f, 0.1f, 100.f);
 
-  scn->add_node(scene_node::make<model_node>(pmx_model, pmx_shader));
+//  scn->add_node(scene_node::make<model_node>(pmx_model, pmx_shader));
 
   world()->add("figure_manager", std::make_shared<figure::manager>());
   auto fm = world()->get<figure::manager::ptr_t>("figure_manager");
@@ -174,99 +173,9 @@ int main(int argc, char **argv)
   assert(gui_shader->compile_from_source_file("assets/shader/gui.vsh", "assets/shader/gui.fsh"));
   auto gui_system = gui::system::create(gui_shader, font_renderer);
   world()->add("gui", gui_system);
-  bool visible_mouse_point = false;
-  int morph = 0;
-  int mode = 0;
-  {
-    auto win = gui_system->add_window(U"てすとウィンドウ");
-    win->add_child<gui::check_box>(U"マウス座標", &visible_mouse_point);
-    win->add_child<gui::button>(U"ボタン", [=](){ std::cout << "click!" << std::endl; });
-    auto grp = win->add_child<gui::group>(U"グループ", false);
-    auto cmb = grp->add_child<gui::combo_box>(U"コンボボックス", &morph);
-    cmb->add_item(U"一つ目のアイテム");
-    cmb->add_item(U"2nd item");
-    cmb->add_item(U"第三のもの");
-    grp->add_child<gui::radio_button>(U"ラジオボタン０", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
-    grp->add_child<gui::radio_button>(U"ラジオボタン１", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
-    grp->add_child<gui::radio_button>(U"ラジオボタン２", &mode, 2);
-    win->add_child<gui::label>(U"ラベル");
-    win->add_child<gui::text_box>(U"カメラ", [=](){ return gui::to_s(scn->root_camera().eye(),
-                                                                     std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
-  }
-#if 0
-  {
-    auto win = gui_system->add_window(U"test window");
-    win->add_child<gui::check_box>(U"mouse position", &visible_mouse_point);
-    win->add_child<gui::button>(U"button", [=](){ std::cout << "click!" << std::endl; });
-    auto grp = win->add_child<gui::group>(U"group");
-    auto cmb = grp->add_child<gui::combo_box>(U"combo_box", &morph);
-    cmb->add_item(U"1st item");
-    cmb->add_item(U"２つめのアイテム");
-    cmb->add_item(U"3rd item");
-    grp->add_child<gui::radio_button>(U"radio_button0", &mode, 0)->set_layout_way(gui::LayoutWay_Horizon);
-    grp->add_child<gui::radio_button>(U"radio_button1", &mode, 1)->set_layout_way(gui::LayoutWay_Horizon);
-    grp->add_child<gui::radio_button>(U"radio_button2", &mode, 2);
-    win->add_child<gui::label>(U"label");
-    win->add_child<gui::text_box>(U"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
-                                                                     std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
-  }
-#else
   {
     gui::constructor c(gui_system);
-    c.window(U"test window");
-    c.check_box(U"mouse position", &visible_mouse_point);
-    c.button(U"button", [=](){ std::cout << "click!" << std::endl; });
-    c.begin_group(U"group");
-    auto cmb = c.combo_box(U"combo_box", &morph);
-    cmb->add_item(U"1st item");
-    cmb->add_item(U"２つめのアイテム");
-    cmb->add_item(U"3rd item");
-    c.radio_button(U"radio_button0", &mode, 0);
-    c.same_line();
-    c.radio_button(U"radio_button1", &mode, 1);
-    c.same_line();
-    c.radio_button(U"radio_button2", &mode, 2);
-    c.end_group();
-    c.label(U"label");
-    c.text_box(U"camera", [=](){ return gui::to_s(scn->root_camera().eye(),
-                                                  std::showpos, std::fixed, std::showpoint, std::setprecision(2));});
-    c.slider<float>(U"slider", &gui_system->property().frame_color0.r, 0.f, 1.f);
-    c.numeric_up_down<float>(U"up_down", &gui_system->property().round, 0.f, 20.f, 1.f, [=](){ gui_system->recalc_layout(); });
   }
-#endif
-  {
-    auto win = gui_system->add_window(U"gui param");
-    win->add_child(gui::slider<float>::create(U"color0.r", &gui_system->property().frame_color0.r, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color0.g", &gui_system->property().frame_color0.g, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color0.b", &gui_system->property().frame_color0.b, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color0.a", &gui_system->property().frame_color0.a, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color1.r", &gui_system->property().frame_color1.r, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color1.g", &gui_system->property().frame_color1.g, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color1.b", &gui_system->property().frame_color1.b, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"color1.a", &gui_system->property().frame_color1.a, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active0.r", &gui_system->property().active_color.r, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active0.g", &gui_system->property().active_color.g, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active0.b", &gui_system->property().active_color.b, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active0.a", &gui_system->property().active_color.a, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active1.r", &gui_system->property().semiactive_color.r, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active1.g", &gui_system->property().semiactive_color.g, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active1.b", &gui_system->property().semiactive_color.b, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"active1.a", &gui_system->property().semiactive_color.a, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"font.r", &gui_system->property().font_color.r, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"font.g", &gui_system->property().font_color.g, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"font.b", &gui_system->property().font_color.b, 0.f, 1.f));
-    win->add_child(gui::slider<float>::create(U"font.a", &gui_system->property().font_color.a, 0.f, 1.f));
-
-    win->add_child(gui::numeric_up_down<int>::create(
-      U"font size", &gui_system->property().font_size, 8, 36, 1, [=](){ gui_system->recalc_layout(); }));
-    win->add_child(gui::numeric_up_down<float>::create(
-      U"round", &gui_system->property().round, 0.f, 20.f, 1.f, [=](){ gui_system->recalc_layout(); }));
-    win->add_child(gui::numeric_up_down<float>::create(
-      U"mergin", &gui_system->property().mergin, 0.f, 10.f, 1.f, [=](){ gui_system->recalc_layout(); }));
-    win->add_child(gui::numeric_up_down<float>::create(
-      U"tickness", &gui_system->property().tickness, 0.f, 10.f, 1.f, [=](){ gui_system->recalc_layout(); }));
-  }
-  gui_system->calc_layout();
   
   while (!glfwWindowShouldClose(window)) {
 
@@ -300,15 +209,6 @@ int main(int argc, char **argv)
     scn->draw();
 
     gui_system->draw();
-
-    if (visible_mouse_point) {
-      double x, y;
-      glfwGetCursorPos(window, &x, &y);
-      std::basic_stringstream<char32_t> ss;
-      ss << x << ", " << y;
-      font_renderer->render({(float)x, (float)y}, {16, 16}, {0.f, 0.f, 0.f, 1.f}, ss.str());
-    }
-
 
     glfwSwapBuffers(window);
   }

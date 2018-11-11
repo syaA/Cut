@@ -4,13 +4,20 @@
 
 std::string read_file_all(const char *filename);
 
-void read_uint8(std::istream&, uint8_t*, int n = 1);
-void read_int8(std::istream&, int8_t*, int n = 1);
-void read_uint16(std::istream&, uint16_t*, int n = 1);
-void read_int16(std::istream&, int16_t*, int n = 1);
-void read_uint32(std::istream&, uint32_t*, int n = 1);
-void read_int32(std::istream&, int32_t*, int n = 1);
-void read_float(std::istream&, float*, int n = 1);
+
+template<class PtrT>
+void read(std::istream& in, PtrT p, int n=1)
+{
+  static_assert(std::is_pointer_v<PtrT>);
+  in.read((char*)p, sizeof(*p) * n);
+}
+
+template<class T, int N>
+void read(std::istream& in, T (&a)[N])
+{
+  return read(in, a, N);
+}
+
 
 #define countof(array) (sizeof(array)/sizeof(array[0]))
 

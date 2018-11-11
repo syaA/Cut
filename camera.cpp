@@ -7,7 +7,7 @@
 
 
 camera::camera()
-  : eye_(0.f, 10.f, 0.f), at_(0.f, 0.f, 0.f), up_(0.f, 1.f, 0.f),
+  : eye_{ 0.f, 10.f, 0.f }, at_{ 0.f, 0.f, 0.f }, up_{ 0.f, 1.f, 0.f },
     fov_(deg2rad(45.f)), aspect_(1.f), z_near_(0.1f), z_far_(100.f)
 {
 }
@@ -29,9 +29,7 @@ void camera::makeup_matrix()
 
 camera_control::camera_control(const camera& c)
   : initial_dir_(normalize(c.eye() - c.at())), center_(c.at()), radius_(len(c.eye() - c.at())),
-    speed_(5.f),
-    cur_rot_(0.f), rot_(0.f),
-    button_(-1), prev_pos_(0.f)
+    speed_{ 5.f, 5.f }, cur_rot_{}, rot_{}, button_(-1), prev_pos_{}
 {
 }
 
@@ -44,7 +42,7 @@ void camera_control::on_mouse_button(GLFWwindow *window, int button, int action,
       glfwGetCursorPos(window, &x, &y);
       int width, height;
       glfwGetWindowSize(window, &width, &height);
-      prev_pos_ = vec2((float)(x * 2 - width) / width, (float)(height - 2 * y) / height);
+      prev_pos_ = vec2{ (float)(x * 2 - width) / width, (float)(height - 2 * y) / height };
       cur_rot_ = vec3::zero();
     }
   } else {
@@ -60,7 +58,7 @@ void camera_control::on_cursor_move(GLFWwindow *window, double x, double y)
   case GLFW_MOUSE_BUTTON_RIGHT:
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    vec2 cur_pos((float)(x * 2 - width) / width, (float)(height - 2 * y) / height);
+    vec2 cur_pos{ (float)(x * 2 - width) / width, (float)(height - 2 * y) / height };
     cur_rot_.x = (cur_pos.y - prev_pos_.y) * speed_.x;
     cur_rot_.y = (cur_pos.x - prev_pos_.x) * speed_.y;
     break;

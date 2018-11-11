@@ -113,9 +113,9 @@ size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u32s
     }
     auto info = glyph_table_[{c, size.x, size.y}];
     auto xy = vertex_from_screen({pos.x + info.bx, pos.y - info.by});
-    auto wh = vec2(info.uv.w / (screen_size_.x / 2.f), info.uv.h / (screen_size_.y / 2.f));
-    auto uv = vec2((info.uv.x + 0.5f) / tex_size , (info.uv.y + 0.5f) / tex_size);
-    auto uvwh = vec2((info.uv.w - 1.f)/ tex_size, (info.uv.h - 1.f) / tex_size);
+    auto wh = vec2{ info.uv.w / (screen_size_.x / 2.f), info.uv.h / (screen_size_.y / 2.f) };
+    auto uv = vec2{ (info.uv.x + 0.5f) / tex_size , (info.uv.y + 0.5f) / tex_size };
+    auto uvwh = vec2{ (info.uv.w - 1.f) / tex_size, (info.uv.h - 1.f) / tex_size };
     vertex v;
     v.col = col;
     v.pos = { xy.x, xy.y - wh.y };
@@ -164,13 +164,18 @@ size_t renderer::render(vec2 pos, const ivec2& size, const color& col, std::u32s
   return vertex_array.size() / 6;
 }
 
+rect renderer::get_area(int size, std::u32string_view str, vec2 *end)
+{
+  return get_area({ size, size }, str, end);
+}
+
 rect renderer::get_area(const ivec2& size, std::u32string_view str, vec2 *end)
 {
   prepare_font(size, str);
 
-  vec2 lr(0.f);
-  vec2 rb(0.f);
-  vec2 pos(0.f);
+  vec2 lr{};
+  vec2 rb{};
+  vec2 pos{};
   for (auto c : str) {
     switch (c) {
     case u'\n':

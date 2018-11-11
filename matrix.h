@@ -118,25 +118,22 @@ inline matrix concat(const matrix& a, const matrix& b)
 inline vec3 transform_point(const matrix& m, const vec3& v)
 {
   float w = m.m[3]*v.x + m.m[7]*v.y + m.m[11]*v.z + m.m[15];
-  return vec3(
-    (m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z + m.m[12]) / w,
-    (m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z + m.m[13]) / w,
-    (m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z + m.m[14]) / w);
+  return { (m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z + m.m[12]) / w,
+           (m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z + m.m[13]) / w,
+           (m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z + m.m[14]) / w };
 }
 inline vec3 transform_direction(const matrix& m, const vec3& v)
 {
-  return vec3(
-    m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z,
-    m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z,
-    m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z);
+  return { m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z,
+           m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z,
+           m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z };
 }
 inline vec4 transform(const matrix& m, const vec4& v)
 {
-  return vec4(
-    m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z + m.m[12]*v.w,
-    m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z + m.m[13]*v.w,
-    m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z + m.m[14]*v.w,
-    m.m[ 3]*v.x + m.m[ 7]*v.y + m.m[11]*v.z + m.m[15]*v.w);
+  return { m.m[ 0]*v.x + m.m[ 4]*v.y + m.m[ 8]*v.z + m.m[12]*v.w,
+           m.m[ 1]*v.x + m.m[ 5]*v.y + m.m[ 9]*v.z + m.m[13]*v.w,
+           m.m[ 2]*v.x + m.m[ 6]*v.y + m.m[10]*v.z + m.m[14]*v.w,
+           m.m[ 3]*v.x + m.m[ 7]*v.y + m.m[11]*v.z + m.m[15]*v.w };
 }
 
 inline matrix matrix::ortho(float l, float r, float b, float t, float n, float f)

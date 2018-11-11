@@ -8,7 +8,7 @@ struct quarternion
 
   quarternion() {}
   quarternion(const vec3& v, float w) : v(v), w(w) {}
-  quarternion(float x, float y, float z, float w) : quarternion(vec3(x, y, z), w) {}
+  quarternion(float x, float y, float z, float w) : quarternion(vec3{x, y, z}, w) {}
   quarternion(std::initializer_list<float> init)
     : quarternion(init.begin()[0], init.begin()[1], init.begin()[2], init.begin()[3])
   {}
@@ -62,7 +62,7 @@ inline vec3 rotate(const quarternion& q, const vec3& v)
 inline vec4 rotate(const quarternion& q, const vec4& v)
 {
   vec3 t = rotate(q, as_vec3(v));
-  return vec4(t.x, t.y, t.z, v.w);
+  return vec4{t.x, t.y, t.z, v.w};
 }
 
 inline matrix to_matrix(const quarternion& q)

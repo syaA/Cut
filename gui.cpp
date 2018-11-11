@@ -149,7 +149,7 @@ void draw_context::draw_font(const vec2& pos, const color& c, const string_t& st
 
 
 component::component(const string_t& name)
-  : name_(name), local_pos_(0.f, 0.f), size_(0.f, 0.f), layout_way_(LayoutWay_Vertical)
+  : name_(name), local_pos_{}, size_{}, layout_way_(LayoutWay_Vertical)
 {
 }
 
@@ -263,17 +263,17 @@ void component_set::clear_child()
 system::system(shader::ptr_t s, font::renderer::ptr_t f)
   : component_set(U"root"),
     shader_(s), font_renderer_(f),
-    prev_cursor_pos_(0.f)
+    prev_cursor_pos_{}
 {
   glGenBuffers(1, &vertex_buffer_);
 
   // デフォルトプロパティ.
-  property_.font_color = color(0.f, 0.f, 0.f, 1.f);
+  property_.font_color = color{ 0.f, 0.f, 0.f, 1.f };
   property_.font_size = 12;
-  property_.frame_color0 = color(0.f, 0.f, 0.f, 1.f);
-  property_.frame_color1 = color(1.f, 1.f, 1.f, .9f);
-  property_.active_color = color(1.f, 0.65f, 0.0f, 1.0f);
-  property_.semiactive_color = color(0.99f, 0.96f, 0.75f, 1.f);
+  property_.frame_color0 = color{ 0.f, 0.f, 0.f, 1.f };
+  property_.frame_color1 = color{ 1.f, 1.f, 1.f, .9f };
+  property_.active_color = color{ 1.f, 0.65f, 0.0f, 1.0f };
+  property_.semiactive_color = color{ 0.99f, 0.96f, 0.75f, 1.f };
   property_.round = 4.f;
   property_.mergin = 4.f;
   property_.tickness = 4.f;
@@ -360,7 +360,7 @@ void system::clear_window()
 
 bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action, ModKey mod)
 {
-  p = clamp(p, vec2(0.f), screen_size_);
+  p = clamp(p, vec2{}, screen_size_);
   // ウィンドウフォーカス.
   for (auto w : reverse(child_array())) {
     if (is_in_area(p, w->local_pos(), w->size())) {
@@ -393,7 +393,7 @@ bool system::on_mouse_button_root(vec2 p, MouseButton button, MouseAction action
 
 bool system::on_cursor_move_root(vec2 p)
 {
-  p = clamp(p, vec2(0.f), screen_size_);
+  p = clamp(p, vec2{}, screen_size_);
   event_handler_stack_t cur_stk, pre_stk;
   make_event_handler_stack(p, cur_stk);
   make_event_handler_stack(prev_cursor_pos_, pre_stk);
@@ -436,7 +436,7 @@ bool system::on_cursor_enter_root(vec2)
 
 bool system::on_cursor_leave_root(vec2 p)
 {
-  p = clamp(p, vec2(0.f), screen_size_);
+  p = clamp(p, vec2{}, screen_size_);
   return 
     on_cursor_move_root(p) ||
       on_mouse_button_root(p, MouseButton_Left, MouseAction_Release, ModKey_All) ||
@@ -508,7 +508,7 @@ system::component_ptr_t system::focus() const
 
 
 drag_control::drag_control()
-  : area_pos_(0.f), area_size_(0.f), on_drag_(false)
+  : area_pos_{}, area_size_{}, on_drag_(false)
 {
 }
 
@@ -563,8 +563,8 @@ void textedit_control::draw_cursor(const vec2& base_pos, draw_context& cxt) cons
 {
   const system_property& prop = cxt.property;
   rect area = cxt.font_renderer->get_area(prop.font_size, {str_.c_str(), cursor_});
-  cxt.draw_line(vec2(base_pos.x + area.w, base_pos.y),
-                vec2(base_pos.x + area.w, base_pos.y - prop.font_size),
+  cxt.draw_line(vec2{ base_pos.x + area.w, base_pos.y },
+                vec2{ base_pos.x + area.w, base_pos.y - prop.font_size },
                 cxt.property.frame_color0);
 }
 
@@ -635,16 +635,16 @@ void window::draw(draw_context& cxt) const
   const color& cc =  in_press_ ? prop.active_color : prop.frame_color0;
   auto [x, y] = local_pos();
   if (in_open_) {
-    cxt.draw_triangle(vec2(x + prop.mergin,               y + tri_size_.y * 3.f / 8.f),
-                      vec2(x + tri_size_.x * .5f,         y + tri_size_.y * 5.f / 8.f),
-                      vec2(x + tri_size_.x - prop.mergin, y + tri_size_.y * 3.f / 8.f),
+    cxt.draw_triangle(vec2{ x + prop.mergin,               y + tri_size_.y * 3.f / 8.f },
+                      vec2{ x + tri_size_.x * .5f,         y + tri_size_.y * 5.f / 8.f },
+                      vec2{ x + tri_size_.x - prop.mergin, y + tri_size_.y * 3.f / 8.f },
                       cc);
     cxt.draw_line(line_l_, line_r_, prop.frame_color0);
     component_set::draw(cxt);
   } else {
-    cxt.draw_triangle(vec2(x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y / 4.f),
-                      vec2(x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y * 3.f / 4.f),
-                      vec2(x + tri_size_.x * 3.f / 4.f,         y + tri_size_.y / 2.f),
+    cxt.draw_triangle(vec2{ x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y / 4.f },
+                      vec2{ x + tri_size_.x / 4.f + prop.mergin, y + tri_size_.y * 3.f / 4.f },
+                      vec2{ x + tri_size_.x * 3.f / 4.f,         y + tri_size_.y / 2.f },
                       cc);
   }
 }
@@ -652,12 +652,12 @@ void window::draw(draw_context& cxt) const
 vec2 window::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
-  tri_size_ = vec2(prop.font_size / 2.f + prop.mergin * 3.f, prop.font_size + prop.mergin * 2.f);
+  tri_size_ = vec2{ prop.font_size / 2.f + prop.mergin * 3.f, prop.font_size + prop.mergin * 2.f };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
   float width = name_area.w + prop.mergin * 2.f;
   auto pos = local_pos();
-  name_pos_ = pos + vec2(prop.mergin + tri_size_.x, prop.font_size + prop.mergin);
-  pos += vec2(prop.mergin, prop.mergin * 2.f + prop.font_size);
+  name_pos_ = pos + vec2{ prop.mergin + tri_size_.x, prop.font_size + prop.mergin };
+  pos += vec2{ prop.mergin, prop.mergin * 2.f + prop.font_size };
   if (in_open_) {
     pos.y += prop.mergin * 2.f;
   }
@@ -669,8 +669,8 @@ vec2 window::calc_layout(calc_layout_context& cxt)
   size.y = (pos.y + size.y) - local_pos().y;
   set_size(size);
 
-  line_l_ = vec2(pos.x, local_pos().y + tri_size_.y + prop.mergin);
-  line_r_ = line_l_ + vec2(size.x - prop.mergin * 2.f, 0.f);
+  line_l_ = vec2{ pos.x, local_pos().y + tri_size_.y + prop.mergin };
+  line_r_ = line_l_ + vec2{ size.x - prop.mergin * 2.f, 0.f };
 
   drag_.set_area(local_pos(), size);
 
@@ -748,7 +748,7 @@ event_result window::on_cursor_leave(const vec2& p)
 
 
 group::group(const string_t& name, bool opened)
-  : component_set(name), name_pos_(0.f), tri_size_(0.f),
+  : component_set(name), name_pos_{}, tri_size_{},
     in_open_(opened), in_press_(false), in_over_(false)
 {
 }
@@ -763,16 +763,16 @@ void group::draw(draw_context& cxt) const
   const color& cc =  in_press_ ? prop.active_color : prop.frame_color0;
   auto [x, y] = local_pos();
   if (in_open_) {
-    cxt.draw_triangle(vec2(x,                     y + tri_size_.y * 3.f / 8.f),
-                      vec2(x + tri_size_.x * .5f, y + tri_size_.y * 5.f / 8.f),
-                      vec2(x + tri_size_.x,       y + tri_size_.y * 3.f / 8.f),
+    cxt.draw_triangle(vec2{ x,                     y + tri_size_.y * 3.f / 8.f },
+                      vec2{ x + tri_size_.x * .5f, y + tri_size_.y * 5.f / 8.f },
+                      vec2{ x + tri_size_.x,       y + tri_size_.y * 3.f / 8.f },
                       cc);
     component_set::draw(cxt);
     draw_frame(cxt);
   } else {
-    cxt.draw_triangle(vec2(x + tri_size_.x / 4.f,       y + tri_size_.y / 4.f),
-                      vec2(x + tri_size_.x / 4.f,       y + tri_size_.y * 3.f / 4.f),
-                        vec2(x + tri_size_.x * 3.f / 4.f, y + tri_size_.y / 2.f),
+    cxt.draw_triangle(vec2{ x + tri_size_.x / 4.f,       y + tri_size_.y / 4.f },
+                      vec2{ x + tri_size_.x / 4.f,       y + tri_size_.y * 3.f / 4.f },
+                      vec2{ x + tri_size_.x * 3.f / 4.f, y + tri_size_.y / 2.f },
                       cc);
   }
 }
@@ -819,23 +819,23 @@ void group::draw_frame(draw_context& cxt) const
 vec2 group::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
-  tri_size_ = vec2(prop.font_size / 2.f + prop.mergin, prop.font_size + prop.mergin * 2.f);
+  tri_size_ = vec2{ prop.font_size / 2.f + prop.mergin, prop.font_size + prop.mergin * 2.f };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(tri_size_.x, (float)prop.font_size);
-  line_pos_ = local_pos() + vec2(prop.mergin, prop.font_size / 2.f);
-  vec2 pos = line_pos_ + vec2(prop.mergin, prop.font_size + prop.mergin);
-  vec2 child_size(0.f);
+  name_pos_ = local_pos() + vec2{ tri_size_.x, (float)prop.font_size };
+  line_pos_ = local_pos() + vec2{ prop.mergin, prop.font_size / 2.f };
+  vec2 pos = line_pos_ + vec2{ prop.mergin, prop.font_size + prop.mergin };
+  vec2 child_size{};
   child_size = place_compoent_array(pos, cxt, child_array());
   child_size.x = std::max(child_size.x, tri_size_.x + name_area.w + prop.mergin);
-  line_size_ = child_size + vec2(prop.mergin) + (pos - line_pos_);
+  line_size_ = child_size + vec2{ prop.mergin, prop.mergin } + (pos - line_pos_);
   line_lt_.x = local_pos().x + tri_size_.x + name_area.w + prop.mergin;
   line_lt_.y = local_pos().y + tri_size_.y;
   set_size(tri_size_);
 
   if (in_open_) {
-    return line_pos_ + line_size_ + vec2(prop.mergin) - local_pos();
+    return line_pos_ + line_size_ + vec2{ prop.mergin, prop.mergin } - local_pos();
   } else {
-    return name_pos_ + vec2((float)name_area.w, (float)prop.mergin) - local_pos();
+    return name_pos_ + vec2{ (float)name_area.w, (float)prop.mergin } - local_pos();
   }
 }
 
@@ -890,14 +890,14 @@ event_result group::on_cursor_leave(const vec2& p)
 
 
 button::button(const string_t& name, bool *notice)
-  : component(name), name_pos_(0.f), area_size_(0.f),
+  : component(name), name_pos_{}, area_size_{},
     in_press_(false), in_over_(false),
     notice_variable_(notice), notice_function_(0)
 {
 }
 
 button::button(const string_t& name, callback_t notice)
-  : component(name), name_pos_(0.f), area_size_(0.f),
+  : component(name), name_pos_{}, area_size_{},
     in_press_(false), in_over_(false),
     notice_variable_(0), notice_function_(notice)
 {
@@ -978,7 +978,7 @@ event_result button::on_cursor_leave(const vec2&)
 
 combo_box::combo_box(const string_t& name, int *value)
   : component(name),
-    name_pos_(0.f),
+    name_pos_{},
     in_open_(false), in_press_(false), in_over_(false), cur_index_(0),
     notice_variable_(value)
 {
@@ -990,17 +990,17 @@ void combo_box::draw(draw_context& cxt) const
   const color& cc =  (in_press_ || in_open_) ? prop.active_color : prop.frame_color0;
   cxt.draw_font(name_pos_, prop.font_color, name());
   cxt.draw_rect(tri_pos_, tri_size_, prop.frame_color0, (in_over_ || in_open_) ? prop.semiactive_color : prop.frame_color1);
-  cxt.draw_triangle(vec2(tri_pos_.x + prop.mergin,                     tri_pos_.y + tri_size_.y * 3.f / 8.f),
-                    vec2(tri_pos_.x + tri_size_.x * .5f,               tri_pos_.y + tri_size_.y * 5.f / 8.f),
-                    vec2(tri_pos_.x + tri_size_.x * 1.f - prop.mergin, tri_pos_.y + tri_size_.y * 3.f / 8.f),
+  cxt.draw_triangle(vec2{ tri_pos_.x + prop.mergin,                     tri_pos_.y + tri_size_.y * 3.f / 8.f },
+                    vec2{ tri_pos_.x + tri_size_.x * .5f,               tri_pos_.y + tri_size_.y * 5.f / 8.f },
+                    vec2{ tri_pos_.x + tri_size_.x * 1.f - prop.mergin, tri_pos_.y + tri_size_.y * 3.f / 8.f },
                     cc);
   cxt.draw_rect(item_pos_, item_size_, prop.frame_color0, prop.frame_color1);
   cxt.draw_font(item_font_pos_, prop.font_color, item_array_[*notice_variable_]);
   if (in_open_) {
     cxt.draw_rect(item_list_pos_, item_list_size_, prop.frame_color0, prop.semiactive_color);
     if (cur_index_ >= 0) {
-      cxt.draw_rect(item_list_pos_ + vec2(0.f, item_height_ * cur_index_),
-                    vec2(item_list_size_.x, item_height_),
+      cxt.draw_rect(item_list_pos_ + vec2{ 0.f, item_height_ * cur_index_ },
+                    vec2{ item_list_size_.x, item_height_ },
                     prop.frame_color0, prop.active_color);
     }
     vec2 pos = item_list_font_pos_;
@@ -1015,24 +1015,24 @@ vec2 combo_box::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(0.f, prop.font_size + prop.mergin);
+  name_pos_ = local_pos() + vec2{ 0.f, prop.font_size + prop.mergin };
   float max_width = 0.f;
   for (const auto& c : item_array_) {
     rect area = cxt.font_renderer->get_area(prop.font_size, c);
     max_width = std::max(max_width, (float)area.w);
   }
-  item_pos_ = local_pos() + vec2(name_area.w + prop.mergin, 0.f);
-  item_size_ = vec2(max_width + prop.mergin * 2.f, prop.font_size + prop.mergin * 2.f);
-  item_font_pos_ = item_pos_ + vec2(prop.mergin, prop.font_size + prop.mergin);
-  tri_pos_ = item_pos_ + vec2(item_size_.x- 1.f, 0.f);
-  tri_size_ = vec2(item_size_.y / 2.f + prop.mergin * 2.f, item_size_.y);
+  item_pos_ = local_pos() + vec2{ name_area.w + prop.mergin, 0.f };
+  item_size_ = vec2{ max_width + prop.mergin * 2.f, prop.font_size + prop.mergin * 2.f };
+  item_font_pos_ = item_pos_ + vec2{ prop.mergin, prop.font_size + prop.mergin };
+  tri_pos_ = item_pos_ + vec2{ item_size_.x- 1.f, 0.f };
+  tri_size_ = vec2{ item_size_.y / 2.f + prop.mergin * 2.f, item_size_.y };
   vec2 size = tri_pos_ + tri_size_ - local_pos();
 
   if (in_open_) {
     item_height_ = prop.font_size + prop.mergin * 2.f;
-    item_list_pos_ = item_pos_ + vec2(0.f, size.y - 1.f);
-    item_list_size_ = vec2(item_size_.x, item_height_ * item_array_.size());;
-    item_list_font_pos_ = item_list_pos_ + vec2(prop.mergin, prop.font_size + prop.mergin);
+    item_list_pos_ = item_pos_ + vec2{ 0.f, size.y - 1.f };
+    item_list_size_ = vec2{ item_size_.x, item_height_ * item_array_.size() };
+    item_list_font_pos_ = item_list_pos_ + vec2{ prop.mergin, prop.font_size + prop.mergin };
     set_size({size.x, size.y + item_list_size_.y});
   } else {
     set_size(size);
@@ -1049,7 +1049,7 @@ event_result combo_box::on_mouse_button(const vec2& p, MouseButton button, Mouse
     if (button == MouseButton_Left) {
       if (action == MouseAction_Press) {
         // ▼
-        if (is_in_area(p, item_pos_, vec2(item_size_.x + tri_size_.x, item_size_.y))) {
+        if (is_in_area(p, item_pos_, vec2{ item_size_.x + tri_size_.x, item_size_.y })) {
           in_press_ = true;
           return { true, false };
         }
@@ -1060,7 +1060,7 @@ event_result combo_box::on_mouse_button(const vec2& p, MouseButton button, Mouse
         }
       } else {
         // ▼.
-        if (is_in_area(p, item_pos_, vec2(item_size_.x + tri_size_.x, item_size_.y))) {
+        if (is_in_area(p, item_pos_, vec2{ item_size_.x + tri_size_.x, item_size_.y })) {
           if (in_press_) {
             in_open_ = false;
             in_press_ = false;
@@ -1089,7 +1089,7 @@ event_result combo_box::on_mouse_button(const vec2& p, MouseButton button, Mouse
   } else {
     // アイテムか▼押されたら開く.
     if ((button == MouseButton_Left) && (action == MouseAction_Press)) {
-      if (is_in_area(p, item_pos_, vec2(item_size_.x + tri_size_.x, item_size_.y))) {
+      if (is_in_area(p, item_pos_, vec2{ item_size_.x + tri_size_.x, item_size_.y })) {
         in_open_ = true;
         return { true, true };
       }
@@ -1150,8 +1150,8 @@ int combo_box::get_item_list_index(const vec2& p)
   size_t num = item_array_.size();
   for (size_t i=0; i<num; ++i) {
     if (is_in_area(p,
-                   item_list_pos_ + vec2(0.f, i * item_height_),
-                   vec2(item_list_size_.x, item_height_))) {
+                   item_list_pos_ + vec2{ 0.f, i * item_height_ },
+                   vec2{ item_list_size_.x, item_height_ })) {
       return (int)i;
     }
   }
@@ -1180,12 +1180,12 @@ vec2 check_box::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
   box_pos_ = local_pos();
-  box_size_ = vec2((float)prop.font_size);
+  box_size_ = vec2{ (float)prop.font_size, (float)prop.font_size };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(box_size_.x + prop.mergin, (float)-name_area.y);
+  name_pos_ = local_pos() + vec2{ box_size_.x + prop.mergin, (float)-name_area.y };
   set_size(box_pos_ + box_size_ - local_pos());
 
-  return name_pos_ + vec2(prop.mergin + name_area.w, prop.mergin) - local_pos();
+  return name_pos_ + vec2{ prop.mergin + name_area.w, prop.mergin } - local_pos();
 }
 
 event_result check_box::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)
@@ -1259,12 +1259,12 @@ vec2 radio_button::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
   box_pos_ = local_pos();
-  box_size_ = vec2((float)prop.font_size);
+  box_size_ = vec2{ (float)prop.font_size, (float)prop.font_size };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(box_size_.x + prop.mergin, (float)-name_area.y);
+  name_pos_ = local_pos() + vec2{ box_size_.x + prop.mergin, (float)-name_area.y };
   set_size(box_pos_ + box_size_ - local_pos());
 
-  return name_pos_ + vec2(prop.mergin + name_area.w, prop.mergin) - local_pos();
+  return name_pos_ + vec2{ prop.mergin + name_area.w, prop.mergin } - local_pos();
 }
 
 event_result radio_button::on_mouse_button(const vec2& p, MouseButton button, MouseAction action, ModKey)
@@ -1308,7 +1308,7 @@ event_result radio_button::on_cursor_leave(const vec2&)
 
 
 label::label(const string_t& name)
-  : component(name), name_pos_(0.f)
+  : component(name), name_pos_{}
 {
 }
 
@@ -1322,9 +1322,9 @@ vec2 label::calc_layout(calc_layout_context& cxt)
 {
   const system_property& prop = cxt.property;
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = local_pos() + vec2(0.f, (float)-name_area.y);
+  name_pos_ = local_pos() + vec2{ 0.f, (float)-name_area.y };
 
-  return vec2((float)name_area.w, (float)prop.font_size);
+  return vec2{ (float)name_area.w, (float)prop.font_size };
 }
 
 
@@ -1357,12 +1357,12 @@ vec2 text_box::calc_layout(calc_layout_context& cxt)
   const auto& prop = cxt.property;
   rect text_area = cxt.font_renderer->get_area(prop.font_size, str_);
   float width = std::max(width_, text_area.w + prop.mergin * 2.f);
-  text_size_ = vec2(width, prop.font_size + prop.mergin * 2.f);
-  text_font_pos_ = local_pos() + vec2(prop.mergin, prop.font_size + prop.mergin);
-  name_pos_ = local_pos() + vec2(text_size_.x + prop.mergin, prop.font_size + prop.mergin);
+  text_size_ = vec2{ width, prop.font_size + prop.mergin * 2.f };
+  text_font_pos_ = local_pos() + vec2{ prop.mergin, prop.font_size + prop.mergin };
+  name_pos_ = local_pos() + vec2{ text_size_.x + prop.mergin, prop.font_size + prop.mergin };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
 
-  return name_pos_ + vec2(name_area.w, prop.mergin) - local_pos();
+  return name_pos_ + vec2{ name_area.w, prop.mergin } - local_pos();
 }
 
 
@@ -1390,15 +1390,15 @@ vec2 slider_base::calc_layout(calc_layout_context& cxt)
 {
   const auto& prop = cxt.property;
   base_pos_ = local_pos();
-  base_size_ = vec2(width_, prop.font_size + prop.mergin * 2.f);
-  value_size_ = vec2(value_width(width_), base_size_.y);
+  base_size_ = vec2{ width_, prop.font_size + prop.mergin * 2.f };
+  value_size_ = vec2{ value_width(width_), base_size_.y };
   rect value_area = cxt.font_renderer->get_area(prop.font_size, value_str());
-  value_font_pos_ = vec2(roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f),
-                         base_pos_.y + prop.font_size + prop.mergin);
+  value_font_pos_ = vec2{ roundup(base_pos_.x + base_size_.x / 2.f - value_area.w / 2.f),
+                          base_pos_.y + prop.font_size + prop.mergin };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
-  name_pos_ = base_pos_ + vec2(base_size_.x + prop.mergin, prop.font_size + prop.mergin);
+  name_pos_ = base_pos_ + vec2{ base_size_.x + prop.mergin, prop.font_size + prop.mergin };
 
-  set_size(name_pos_ + vec2((float)name_area.w, prop.mergin) - local_pos());
+  set_size(name_pos_ + vec2{ (float)name_area.w, prop.mergin } - local_pos());
   drag_.set_area(base_pos_, base_size_);
 
   return size();
@@ -1459,14 +1459,14 @@ void numeric_up_down_base::draw(draw_context& cxt) const
     textedit_.draw_cursor(value_font_pos_, cxt);
   }
   cxt.draw_rect(up_pos_, up_size_, prop.frame_color0, in_over_up_ ? prop.semiactive_color : color::zero());
-  cxt.draw_triangle(up_pos_ + vec2(up_size_.x / 2.f,       prop.mergin / 2.f),
-                    up_pos_ + vec2(up_size_.x * 1.f / 4.f, up_size_.y - prop.mergin / 2.f),
-                    up_pos_ + vec2(up_size_.x * 3.f / 4.f, up_size_.y - prop.mergin / 2.f),
+  cxt.draw_triangle(up_pos_ + vec2{ up_size_.x / 2.f,       prop.mergin / 2.f },
+                    up_pos_ + vec2{ up_size_.x * 1.f / 4.f, up_size_.y - prop.mergin / 2.f },
+                    up_pos_ + vec2{ up_size_.x * 3.f / 4.f, up_size_.y - prop.mergin / 2.f },
                     in_press_up_ ? prop.active_color : prop.frame_color0);
   cxt.draw_rect(down_pos_, down_size_, prop.frame_color0, in_over_down_ ? prop.semiactive_color : color::zero());
-  cxt.draw_triangle(down_pos_ + vec2(down_size_.x / 2.f,       down_size_.y - prop.mergin / 2.f),
-                    down_pos_ + vec2(down_size_.x * 3.f / 4.f, prop.mergin / 2.f),
-                    down_pos_ + vec2(down_size_.x * 1.f / 4.f, prop.mergin / 2.f),
+  cxt.draw_triangle(down_pos_ + vec2{ down_size_.x / 2.f,       down_size_.y - prop.mergin / 2.f },
+                    down_pos_ + vec2{ down_size_.x * 3.f / 4.f, prop.mergin / 2.f },
+                    down_pos_ + vec2{ down_size_.x * 1.f / 4.f, prop.mergin / 2.f },
                     in_press_down_ ? prop.active_color : prop.frame_color0);
   cxt.draw_font(name_pos_, prop.font_color, name());
 }
@@ -1477,17 +1477,17 @@ vec2 numeric_up_down_base::calc_layout(calc_layout_context& cxt)
   rect value_area = cxt.font_renderer->get_area(prop.font_size, textedit_.str());
   value_size_.x = std::max(value_area.w + prop.mergin * 2.f, width_);
   value_size_.y = prop.font_size + prop.mergin * 2.f;
-  value_font_pos_ = local_pos() + vec2(value_size_.x - value_area.w - prop.mergin, prop.font_size + prop.mergin);
-  up_pos_ = local_pos() + vec2(value_size_.x - 1.f, 0.f);
-  up_size_ = vec2(value_size_.y, value_size_.y / 2.f);
-  down_pos_ = up_pos_ + vec2(0.f, up_size_.y );
+  value_font_pos_ = local_pos() + vec2{ value_size_.x - value_area.w - prop.mergin, prop.font_size + prop.mergin };
+  up_pos_ = local_pos() + vec2{ value_size_.x - 1.f, 0.f };
+  up_size_ = vec2{ value_size_.y, value_size_.y / 2.f };
+  down_pos_ = up_pos_ + vec2{ 0.f, up_size_.y };
   down_size_ = up_size_;
-  name_pos_ = up_pos_ + vec2(up_size_.x + prop.mergin, prop.font_size + prop.mergin);
+  name_pos_ = up_pos_ + vec2{ up_size_.x + prop.mergin, prop.font_size + prop.mergin };
   rect name_area = cxt.font_renderer->get_area(prop.font_size, name());
 
-  set_size(vec2(value_size_.x + up_size_.x, value_size_.y));
+  set_size(vec2{ value_size_.x + up_size_.x, value_size_.y });
 
-  return vec2(name_pos_.x + name_area.w, name_pos_.y + prop.mergin) - local_pos();
+  return vec2{ name_pos_.x + name_area.w, name_pos_.y + prop.mergin } - local_pos();
 }
 
 bool numeric_up_down_base::make_event_handler_stack(const vec2& p, event_handler_stack_t& stk)
